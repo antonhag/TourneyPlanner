@@ -12,7 +12,7 @@ public class Tournament
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
 
-    public List<Participant>? Participants { get; set; } 
+    public List<Participant>? Participants { get; set; } = new();
 
     public enum Status
     {
