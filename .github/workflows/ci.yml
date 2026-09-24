@@ -1,0 +1,49 @@
+name: CI
+
+on: 
+  workflow_dispatch:
+  push:
+    branches: main
+  pull_request: 
+    branches: main
+
+jobs:
+  build:
+    name: Bygg och Testa
+    runs-on: ubuntu-latest
+    env:
+        BUILD_CONFIGURATION: "Release"
+    steps:
+      - name: build-and-test
+        run: echo "Bygg och testa"
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: restore
+        run: dotnet restore
+      - name: build 
+        run: dotnet build --no-restore --configuration ${{ env.BUILD_CONFIGURATION }}
+      - name: test
+        run: dotnet test --no-build --configuration ${{ env.BUILD_CONFIGURATION }}
+        
+  github_context:    
+      name: Github context
+      runs-on: ubuntu-latest
+      env: 
+        STARTED_BY: ${{ github.actor }}
+        ACTION: ${{ github.event_name }}
+        BRANCH: ${{ github.ref_name }}
+      steps:
+        - name: dump github context
+          run: |
+            echo "Startad av $STARTED_BY — händelse: $ACTION — gren: $BRANCH"
+            echo "Startad av $STARTED_BY — händelse: $ACTION — gren: $BRANCH" > $GITHUB_STEP_SUMMARY
+            
+        
+
+       
+     
+    
+        
+          
