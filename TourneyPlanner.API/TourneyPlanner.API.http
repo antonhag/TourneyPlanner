@@ -1,0 +1,6 @@
+@TourneyPlanner.API_HostAddress = http://localhost:5220
+
+GET {{TourneyPlanner.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
