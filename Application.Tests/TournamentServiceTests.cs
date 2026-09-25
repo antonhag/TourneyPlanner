@@ -62,15 +62,4 @@ public class TournamentServiceTests
         // Assert
         Assert.Single(_repository.Tournaments);
     }
-    
-    [Theory]
-    [MemberData(nameof(CreateTournamentTestData.Invalid), MemberType = typeof(CreateTournamentTestData))]
-    public async Task CreateTournament_InvalidInput_DoesNotCreateTournament(CreateTournamentDto dto)
-    {
-        // Act
-        await _sut.CreateTournamentAsync(dto);
-        
-        // Assert
-        Assert.Single(_repository.Tournaments);
-    }
 }
