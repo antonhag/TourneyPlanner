@@ -1,10 +1,9 @@
-﻿using Application.Tests.TestData;
+﻿using System.ComponentModel.DataAnnotations;
+using Application.Tests.Fakes;
+using Application.Tests.TestData;
 using TourneyPlanner.Application.DTOs;
-using TourneyPlanner.Application.Interfaces.Repositories;
-using TourneyPlanner.Application.Interfaces.Services;
 using TourneyPlanner.Application.Services;
 using TourneyPlanner.Domain.Entities;
-using TourneyPlanner.Infrastructure.Repositories;
 
 namespace Application.Tests;
 
@@ -53,8 +52,7 @@ public class TournamentServiceTests
 
     [Theory]
     [MemberData(nameof(CreateTournamentTestData.Valid), MemberType = typeof(CreateTournamentTestData))]
-    
-    public async Task CreateTournament_ValidInput_CreatesTournament(CreateTournamentDto dto)
+    public async Task CreateTournament_ValidInput_DoesSave(CreateTournamentDto dto)
     {
         // Act
         await _sut.CreateTournamentAsync(dto);
@@ -62,4 +60,18 @@ public class TournamentServiceTests
         // Assert
         Assert.Single(_repository.Tournaments);
     }
+
+    [Theory]
+    [MemberData(nameof(CreateTournamentTestData.Invalid), MemberType = typeof(CreateTournamentTestData))]
+    public async Task CreateTournament_InvalidInput_DoesNotSave(CreateTournamentDto dto)
+    {
+        // Act & Assert
+        
+        // ThrowsAsync kör metoden och kollar att den kastar ValidationException.
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.CreateTournamentAsync(dto)); 
+        
+        // kollar så att listan i fake-repot är tom, alltså att valideringarna i metoden fungerade och inget sparades.
+        Assert.Empty(_repository.Tournaments); 
+    }
+    
 }
