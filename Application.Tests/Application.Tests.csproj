@@ -20,6 +20,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\TourneyPlanner.Application\TourneyPlanner.Application.csproj" />
+      <ProjectReference Include="..\TourneyPlanner.Infrastructure\TourneyPlanner.Infrastructure.csproj" />
     </ItemGroup>
 
 </Project>
