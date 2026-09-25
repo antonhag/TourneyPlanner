@@ -1,7 +1,7 @@
 ﻿using TourneyPlanner.Application.Interfaces.Repositories;
 using TourneyPlanner.Domain.Entities;
 
-namespace TourneyPlanner.Infrastructure.Repositories;
+namespace Application.Tests.Fakes;
 
 public class FakeTournamentRepository : ITournamentRepository
 {
