@@ -37,4 +37,9 @@ public class TournamentRepository : ITournamentRepository
         _context.Tournaments.Remove(tournament);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<Tournament?> GetByIdAsync(int id)
+    {
+        return await _context.Tournaments.FindAsync(id);
+    }
 }
