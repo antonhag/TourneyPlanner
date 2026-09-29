@@ -28,4 +28,9 @@ public class FakeTournamentRepository : ITournamentRepository
     {
         throw new NotImplementedException();
     }
+
+    public Task<Tournament?> GetByIdAsync(int id)
+    {
+        return Task.FromResult(Tournaments.FirstOrDefault(t => t.Id == id));
+    }
 }
