@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TourneyPlanner.API.Endpoints;
 using TourneyPlanner.Application.Interfaces.Repositories;
 using TourneyPlanner.Application.Interfaces.Services;
 using TourneyPlanner.Application.Services;
@@ -25,5 +26,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.MapTournamentEndpoints();
 
 app.Run();
