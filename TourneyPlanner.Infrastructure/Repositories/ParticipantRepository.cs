@@ -29,6 +29,11 @@ public class ParticipantRepository : IParticipantRepository
         throw new NotImplementedException();
     }
 
+    public async Task AddRangeAsync(List<Participant> participants)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task UpdateAsync(Participant participant)
     {
         throw new NotImplementedException();
