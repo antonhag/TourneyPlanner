@@ -1,0 +1,89 @@
+﻿@page "/create-tournament"
+@rendermode InteractiveServer
+@using System.Net
+@using TourneyPlanner.UI.Models
+@inject HttpClient Http
+
+<PageTitle>Skapa turnering</PageTitle>
+
+<h1>Skapa turnering</h1>
+
+<EditForm Model="model" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <ValidationSummary></ValidationSummary>
+    
+    <div class="mb-3">
+        <label class="form-label">Namn</label>
+        <InputText class="form-control" @bind-Value="model.Name"></InputText>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Startdatum</label>
+        <InputDate class="form-control" @bind-Value="model.StartDate" min="@DateTime.Today.ToString("yyyy-MM-dd")"></InputDate>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Slutdatum</label>
+        <InputDate class="form-control" @bind-Value="model.EndDate" min="@model.StartDate.ToString("yyyy-MM-dd")"></InputDate>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Antal deltagare</label>
+        <InputNumber class="form-control" @bind-Value="model.Size"></InputNumber>
+    </div>
+    
+    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">Skapa</button>
+    
+</EditForm>
+
+@if (successMessage != null)
+{
+    <div class="alert alert-success mt-2">@successMessage</div>
+}
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger mt-2">@errorMessage</div>
+}
+
+@code {
+    private CreateTournamentModel model = new();
+    private string? successMessage;
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private async Task HandleSubmit()
+    {
+        successMessage = null;
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("tournaments", model);
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "Turneringen skapades";
+                model = new CreateTournamentModel();
+            }
+            else if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+            else
+            {
+                errorMessage = "något gick fel";
+            }
+
+            isSubmitting = false;
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "kunde inte nå APIet";
+            isSubmitting = false;
+        }
+
+    }
+
+}
