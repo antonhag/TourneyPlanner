@@ -17,6 +17,12 @@ builder.Services.AddDbContext<TourneyPlannerDbContext>(options =>
 builder.Services.AddScoped<ITournamentRepository, TournamentRepository>();
 builder.Services.AddScoped<ITournamentService, TournamentService>();
 
+builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
+builder.Services.AddScoped<IParticipantService, ParticipantService>();
+
+builder.Services.AddScoped<IMatchRepository, MatchRepository>();
+builder.Services.AddScoped<IMatchService, MatchService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -28,5 +34,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapTournamentEndpoints();
+app.MapMatchEndpoints();
+app.MapParticipantEndpoints();
 
 app.Run();

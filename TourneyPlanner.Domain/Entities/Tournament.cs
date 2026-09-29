@@ -11,6 +11,8 @@ public class Tournament
     public Status TournamentStatus { get; set; } = Status.Draft;
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
+    
+    public int Size { get; set; }
 
     public List<Participant>? Participants { get; set; } = new();
 
