@@ -61,8 +61,8 @@ public static class ParticipantEndpoints
     {
         try
         {
-            await service.GetParticipantsByTournamentIdAsync(tournamentId);
-            return Results.Ok();
+            var participants = await service.GetParticipantsByTournamentIdAsync(tournamentId);
+            return Results.Ok(participants);
         }
         catch (KeyNotFoundException ex)
         {
@@ -74,8 +74,8 @@ public static class ParticipantEndpoints
     {
         try
         {
-            var participants = await service.GetParticipantsByTournamentIdAsync(id);
-            return Results.Ok(participants);
+            var participant = await service.GetParticipantByIdAsync(id);
+            return Results.Ok(participant);
         }
         catch (KeyNotFoundException ex)
         {
