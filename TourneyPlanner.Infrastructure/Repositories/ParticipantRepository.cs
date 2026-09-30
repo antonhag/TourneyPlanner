@@ -1,5 +1,5 @@
-﻿using TourneyPlanner.Domain.Entities;
-using TourneyPlanner.Application.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using TourneyPlanner.Domain.Entities;
 using TourneyPlanner.Application.Interfaces.Repositories;
 using TourneyPlanner.Infrastructure.Data;
 
@@ -16,31 +16,39 @@ public class ParticipantRepository : IParticipantRepository
     
     public async Task<Participant?> GetParticipantById(int id)
     {
-        throw new NotImplementedException();
+        return await _context.Participants.FindAsync(id);
     }
 
     public async Task<List<Participant>> GetByTournamentIdAsync(int tournamentId)
     {
-        throw new NotImplementedException();
+        return await _context.Participants.Where(p => p.TournamentId == tournamentId).ToListAsync();
     }
 
     public async Task AddAsync(Participant participant)
     {
-        throw new NotImplementedException();
+        _context.Participants.Add(participant);
+        await _context.SaveChangesAsync();
     }
 
     public async Task AddRangeAsync(List<Participant> participants)
     {
-        throw new NotImplementedException();
+        _context.Participants.AddRange(participants);
     }
 
     public async Task UpdateAsync(Participant participant)
     {
-        throw new NotImplementedException();
+        _context.Participants.Update(participant);
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(int id)
     {
-        throw new NotImplementedException();
+        var participant = await _context.Participants.FindAsync(id);
+
+        if (participant != null)
+        {
+            _context.Participants.Remove(participant);
+            await _context.SaveChangesAsync();
+        }
     }
 }

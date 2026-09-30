@@ -109,6 +109,8 @@ public class ParticipantService : IParticipantService
         await _participantRepository.DeleteAsync(participant.Id);
     }
 
+    // Hjälpmetoder
+    
     private async Task<Tournament> GetDraftTournamentAsync(int tournamentId)
     {
         var tournament = await _tournamentRepository.GetByIdAsync(tournamentId);
@@ -154,6 +156,4 @@ public class ParticipantService : IParticipantService
             Name = participant.Name
         };
     }
-    
-    
 }
