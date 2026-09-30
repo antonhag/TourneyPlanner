@@ -33,6 +33,7 @@ public class ParticipantRepository : IParticipantRepository
     public async Task AddRangeAsync(List<Participant> participants)
     {
         _context.Participants.AddRange(participants);
+        await _context.SaveChangesAsync();       
     }
 
     public async Task UpdateAsync(Participant participant)
