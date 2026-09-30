@@ -2,5 +2,5 @@
 
 public interface IMatchService
 {
-    
+    Task GenerateScheduleAsync(int tournamentId);
 }
