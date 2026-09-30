@@ -13,6 +13,12 @@ public static class TournamentEndpoints
 
         // Kopplar POST för tournaments till CreateTournament metoden
         group.MapPost("/", CreateTournament);
+
+        
+        group.MapGet("/", GetAllTournaments);
+        group.MapGet("/{id:int}", GetTournamentById);
+        group.MapPut("/{id:int}", UpdateTournament);
+        group.MapDelete("/{id:int}", DeleteTournament);
     }
 
     // Metoden som skapar en tournament och som körs vid varje POST request
@@ -29,6 +35,59 @@ public static class TournamentEndpoints
         catch (ValidationException ex)
         {
             // Om valideringen misslyckades returnerar den 400 Bad Request och ett felmeddelande
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> GetAllTournaments(ITournamentService service)
+    {
+        var tournaments = await service.GetAllTournamentsAsync();
+        return Results.Ok(tournaments);
+    }
+
+    private static async Task<IResult> GetTournamentById(int id, ITournamentService service)
+    {
+        try
+        {
+            var tournament = await service.GetTournamentByIdAsync(id);
+            return Results.Ok(tournament);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> UpdateTournament(int id, UpdateTournamentDto dto, ITournamentService service)
+    {
+        try
+        {
+            await service.UpdateTournamentAsync(id, dto);
+            return Results.NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (ValidationException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    public static async Task<IResult> DeleteTournament(int id, ITournamentService service)
+    {
+        try
+        {
+            await service.DeleteTournamentAsync(id);
+            return Results.NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (ValidationException ex)
+        {
             return Results.BadRequest(ex.Message);
         }
     }

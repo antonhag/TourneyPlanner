@@ -25,6 +25,8 @@ public class TournamentServiceTests
         {
             Name = "Paddel 2026",
             StartDate = DateTime.Today.AddDays(1),
+            EndDate = DateTime.Today.AddDays(2),
+            Size = 4
         };
 
         // Act
@@ -42,6 +44,8 @@ public class TournamentServiceTests
         {
             Name = "Paddel 2026",
             StartDate = DateTime.Today.AddDays(1),
+            EndDate = DateTime.Today.AddDays(2),
+            Size = 4
         };
         // Act
         await _sut.CreateTournamentAsync(dto);
@@ -74,4 +78,158 @@ public class TournamentServiceTests
         Assert.Empty(_repository.Tournaments); 
     }
     
+    [Fact]
+    public async Task GetTournamentById_ExistingId_ReturnsCorrectDto()
+    {
+        // Arrange
+        _repository.Tournaments.Add(new Tournament
+        {
+            Id = 1,
+            Name = "Paddel 2026",
+            StartDate = DateTime.Today.AddDays(1),
+            EndDate = DateTime.Today.AddDays(2),
+            Size = 4
+        });
+
+        // Act
+        var result = await _sut.GetTournamentByIdAsync(1);
+
+        // Assert
+        Assert.Equal(1, result.Id);
+        Assert.Equal("Paddel 2026", result.Name);
+        Assert.Equal("Draft", result.Status);
+        Assert.Equal(4, result.Size);
+    }
+
+    [Fact]
+    public async Task GetTournamentById_MissingId_ThrowsKeyNotFoundException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetTournamentByIdAsync(999));
+    }
+
+    [Fact]
+    public async Task GetAllTournaments_WithSavedTournaments_ReturnsAll()
+    {
+        // Arrange
+        _repository.Tournaments.Add(new Tournament { Id = 1, Name = "Cup A", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 });
+        _repository.Tournaments.Add(new Tournament { Id = 2, Name = "Cup B", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 8 });
+
+        // Act
+        var result = await _sut.GetAllTournamentsAsync();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public async Task GetAllTournaments_NoTournaments_ReturnsEmptyList()
+    {
+        // Act
+        var result = await _sut.GetAllTournamentsAsync();
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task DeleteTournament_DraftStatus_RemovesTournament()
+    {
+        // Arrange
+        _repository.Tournaments.Add(new Tournament { Id = 1, Name = "Cup A", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 });
+
+        // Act
+        await _sut.DeleteTournamentAsync(1);
+
+        // Assert
+        Assert.Empty(_repository.Tournaments);
+    }
+
+    [Fact]
+    public async Task DeleteTournament_ActiveStatus_ThrowsAndKeepsTournament()
+    {
+        // Arrange
+        _repository.Tournaments.Add(new Tournament
+        {
+            Id = 1,
+            Name = "Cup A",
+            TournamentStatus = Tournament.Status.Active,
+            StartDate = DateTime.Today.AddDays(1),
+            EndDate = DateTime.Today.AddDays(2),
+            Size = 4
+        });
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.DeleteTournamentAsync(1));
+        Assert.Single(_repository.Tournaments);
+    }
+
+    [Fact]
+    public async Task DeleteTournament_MissingId_ThrowsKeyNotFoundException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DeleteTournamentAsync(999));
+    }
+    
+    [Fact]
+    public async Task UpdateTournament_ValidInput_ChangesFields()
+    {
+        // Arrange
+        _repository.Tournaments.Add(new Tournament { Id = 1, Name = "Cup A", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 });
+
+        var dto = new UpdateTournamentDto
+        {
+            Name = "Cup B",
+            StartDate = DateTime.Today.AddDays(3),
+            EndDate = DateTime.Today.AddDays(5),
+            Size = 8
+        };
+
+        // Act
+        await _sut.UpdateTournamentAsync(1, dto);
+
+        // Assert
+        var updated = _repository.Tournaments.Single();
+        Assert.Equal("Cup B", updated.Name);
+        Assert.Equal(DateTime.Today.AddDays(3), updated.StartDate);
+        Assert.Equal(DateTime.Today.AddDays(5), updated.EndDate);
+        Assert.Equal(8, updated.Size);
+    }
+
+    [Theory]
+    [InlineData(Tournament.Status.Active)]
+    [InlineData(Tournament.Status.Finished)]
+    public async Task UpdateTournament_NotDraft_ThrowsValidationException(Tournament.Status status)
+    {
+        // Arrange
+        _repository.Tournaments.Add(new Tournament { Id = 1, Name = "Cup A", TournamentStatus = status, StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 });
+
+        var dto = new UpdateTournamentDto { Name = "Cup B", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.UpdateTournamentAsync(1, dto));
+        Assert.Equal("Cup A", _repository.Tournaments.Single().Name);
+    }
+
+    [Fact]
+    public async Task UpdateTournament_MissingId_ThrowsKeyNotFoundException()
+    {
+        // Arrange
+        var dto = new UpdateTournamentDto { Name = "Cup B", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.UpdateTournamentAsync(999, dto));
+    }
+
+    [Fact]
+    public async Task UpdateTournament_InvalidSize_ThrowsValidationException()
+    {
+        // Arrange
+        _repository.Tournaments.Add(new Tournament { Id = 1, Name = "Cup A", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 });
+
+        var dto = new UpdateTournamentDto { Name = "Cup A", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 1 };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.UpdateTournamentAsync(1, dto));
+    }
 }
