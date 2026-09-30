@@ -16,16 +16,29 @@ public class FakeTournamentRepository : ITournamentRepository
 
     public Task<List<Tournament>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Tournaments.ToList());
     }
 
     public Task UpdateAsync(Tournament tournament)
     {
-        throw new NotImplementedException();
+        var index = Tournaments.FindIndex(t => t.Id == tournament.Id);
+
+        if (index >= 0)
+        {
+            Tournaments[index] = tournament;
+        }
+        
+        return Task.CompletedTask;
     }
 
     public Task DeleteAsync(Tournament tournament)
     {
-        throw new NotImplementedException();
+        Tournaments.Remove(tournament);
+        return Task.CompletedTask;
+    }
+
+    public Task<Tournament?> GetByIdAsync(int id)
+    {
+        return Task.FromResult(Tournaments.FirstOrDefault(t => t.Id == id));
     }
 }
