@@ -1,4 +1,5 @@
-﻿using TourneyPlanner.Application.Interfaces.Repositories;
+﻿using TourneyPlanner.Application.DTOs;
+using TourneyPlanner.Application.Interfaces.Repositories;
 using TourneyPlanner.Application.Interfaces.Services;
 using TourneyPlanner.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
@@ -9,16 +10,26 @@ public class MatchService : IMatchService
 {
     private readonly IMatchRepository _matchRepository;
     private readonly IParticipantRepository _participantRepository;
-    
-    public  MatchService(IMatchRepository matchRepository, IParticipantRepository participantRepository)
+    private readonly ITournamentRepository _tournamentRepository;
+
+    public  MatchService(IMatchRepository matchRepository, IParticipantRepository participantRepository,
+        ITournamentRepository tournamentRepository)
     {
         _matchRepository = matchRepository;
         _participantRepository = participantRepository;
+        _tournamentRepository = tournamentRepository;
     }
 
     public async Task GenerateScheduleAsync(int tournamentId)
     {
-        
+        await GetTournamentOrThrowAsync(tournamentId);
+
+        // Annars skulle alla matcher dupliceras om schemat genereras två gånger
+        if (await _matchRepository.ExistsForTournamentAsync(tournamentId))
+        {
+            throw new ValidationException("Schedule already exists");
+        }
+
         var participants = await _participantRepository.GetByTournamentIdAsync(tournamentId);
         
         // Minst 2 spelare behövs för att starta 
@@ -31,6 +42,65 @@ public class MatchService : IMatchService
         var matches = CreateRoundRobin(tournamentId, ids);
 
         await _matchRepository.AddRangeAsync(matches);
+    }
+
+    public async Task<List<MatchDto>> GetMatchesByTournamentIdAsync(int tournamentId)
+    {
+        await GetTournamentOrThrowAsync(tournamentId);
+
+        var matches = await _matchRepository.GetByTournamentIdAsync(tournamentId);
+
+        return matches.Select(MapToDto).ToList();
+    }
+
+    public async Task<MatchDto> GetMatchByIdAsync(int id)
+    {
+        var match = await GetMatchOrThrowAsync(id);
+        return MapToDto(match);
+    }
+
+    public async Task UpdateMatchResultAsync(int id, UpdateMatchResultDto dto)
+    {
+        var match = await GetMatchOrThrowAsync(id);
+
+        if (dto.HomeScore < 0 || dto.AwayScore < 0)
+        {
+            throw new ValidationException("Score cannot be negative");
+        }
+
+        match.HomeScore = dto.HomeScore;
+        match.AwayScore = dto.AwayScore;
+
+        await _matchRepository.UpdateAsync(match);
+    }
+
+    // Hjälpmetoder
+
+    private async Task<Tournament> GetTournamentOrThrowAsync(int tournamentId)
+    {
+        // KeyNotFoundException för att visa 404 not found svar från endpointen
+        return await _tournamentRepository.GetByIdAsync(tournamentId) ??
+               throw new KeyNotFoundException("Tournament not found");
+    }
+
+    private async Task<Match> GetMatchOrThrowAsync(int id)
+    {
+        return await _matchRepository.GetByIdAsync(id) ??
+               throw new KeyNotFoundException("Match not found");
+    }
+
+    private static MatchDto MapToDto(Match match)
+    {
+        return new MatchDto
+        {
+            Id = match.Id,
+            TournamentId = match.TournamentId,
+            Round = match.Round,
+            HomeParticipantId = match.HomeParticipantId,
+            AwayParticipantId = match.AwayParticipantId,
+            HomeScore = match.HomeScore,
+            AwayScore = match.AwayScore
+        };
     }
 
     private static List<Match> CreateRoundRobin(int tournamentId, List<int> participantIds)
