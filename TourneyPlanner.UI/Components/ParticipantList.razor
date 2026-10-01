@@ -1,0 +1,54 @@
+@using TourneyPlanner.UI.Models
+@inject HttpClient HttpClient
+
+@if (participants == null)
+{
+    <p>Laddar deltagare...</p>
+}
+else if (participants.Count == 0)
+{
+    <p>Inga deltagare än.</p>
+}
+else
+{
+    <ul class="list-group mb-3">
+        @foreach (var participant in participants)
+        {
+            <li class="list-group-item">@participant.Name</li>
+        }
+    </ul>
+}
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger mt-2">@errorMessage</div>   
+}
+
+@code {
+    [Parameter] 
+    public int TournamentId { get; set; }
+    [Parameter] 
+    public bool IsDraft { get; set; }
+    
+    private List<ParticipantModel>? participants;
+    private string? errorMessage;
+
+    // körs när komponenten visas och när TournamentId ändras
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadParticipantsAsync();
+    }
+
+    private async Task LoadParticipantsAsync()
+    {
+        try
+        {
+            participants = await HttpClient.GetFromJsonAsync<List<ParticipantModel>>($"tournaments/{TournamentId}/participants");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte hämta deltagare";
+            participants = new List<ParticipantModel>();
+        }
+    }
+}

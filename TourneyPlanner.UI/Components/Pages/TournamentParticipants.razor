@@ -1,0 +1,13 @@
+@page "/tournaments/{Id:int}/participants"
+@rendermode InteractiveServer
+
+<PageTitle>Deltagare</PageTitle>
+
+<h1>Deltagare</h1>
+
+<ParticipantList tournamentId="@Id" IsDraft="true"/>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+}
