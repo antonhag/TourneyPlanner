@@ -1,0 +1,271 @@
+@page "/participants"
+@page "/tournaments/{TournamentId:int}/participants"
+@rendermode InteractiveServer
+@using System.Net
+@using TourneyPlanner.UI.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Deltagare</PageTitle>
+
+<h1>Deltagare</h1>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger mt-2">@errorMessage</div>
+}
+
+@if (tournaments == null)
+{
+    @if (errorMessage == null)
+    {
+        <p>Laddar turneringar...</p>
+    }
+}
+else if (tournaments.Count == 0)
+{
+    <p>Det finns inga turneringar än. <a href="create-tournament">Skapa en turnering</a>.</p>
+}
+else
+{
+    <div class="mb-3">
+        <label class="form-label">Turnering</label>
+        <select class="form-select" value="@TournamentId" @onchange="OnTournamentChanged">
+            <option value="">Välj turnering</option>
+            @foreach (var tournament in tournaments)
+            {
+                <option value="@tournament.Id">@tournament.Name</option>
+            }
+        </select>
+    </div>
+
+    @if (selectedTournament != null)
+    {
+        <p class="text-muted">
+            @selectedTournament.StartDate.ToString("yyyy-MM-dd") – @selectedTournament.EndDate.ToString("yyyy-MM-dd")
+            · @(participants?.Count ?? 0) av @selectedTournament.Size deltagare
+        </p>
+
+        @if (!CanEdit)
+        {
+            <div class="alert alert-info">Deltagare kan bara ändras när turneringen är ett utkast.</div>
+        }
+        else if (IsFull)
+        {
+            <div class="alert alert-info">Turneringen är full.</div>
+        }
+        else
+        {
+            <EditForm Model="newParticipant" OnValidSubmit="AddParticipant" class="mb-3">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+
+                <label class="form-label">Lägg till deltagare</label>
+                <div class="input-group">
+                    <InputText class="form-control" @bind-Value="newParticipant.Name" placeholder="Namn"></InputText>
+                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">Lägg till</button>
+                </div>
+                <ValidationMessage For="() => newParticipant.Name"></ValidationMessage>
+            </EditForm>
+        }
+
+        @if (successMessage != null)
+        {
+            <div class="alert alert-success mt-2">@successMessage</div>
+        }
+
+        @if (participants == null)
+        {
+            <p>Laddar deltagare...</p>
+        }
+        else if (participants.Count == 0)
+        {
+            <p>Turneringen har inga deltagare än.</p>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Namn</th>
+                    @if (CanEdit)
+                    {
+                        <th></th>
+                    }
+                </tr>
+                </thead>
+                <tbody>
+                @for (var i = 0; i < participants.Count; i++)
+                {
+                    var participant = participants[i];
+                    <tr>
+                        <td>@(i + 1)</td>
+                        <td>@participant.Name</td>
+                        @if (CanEdit)
+                        {
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-danger" disabled="@isSubmitting"
+                                        @onclick="() => DeleteParticipant(participant)">
+                                    Ta bort
+                                </button>
+                            </td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    }
+}
+
+@code {
+    // Kommer från routen /tournaments/{TournamentId}/participants, annars null
+    [Parameter]
+    public int? TournamentId { get; set; }
+
+    private List<TournamentModel>? tournaments;
+    private TournamentModel? selectedTournament;
+    private List<ParticipantModel>? participants;
+    private CreateParticipantModel newParticipant = new();
+    private string? successMessage;
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    // APIet tillåter bara ändringar när turneringen har status Draft
+    private bool CanEdit => selectedTournament?.Status == "Draft";
+    private bool IsFull => participants != null && participants.Count >= selectedTournament?.Size;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            tournaments = await Http.GetFromJsonAsync<List<TournamentModel>>("tournaments");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "kunde inte nå APIet";
+        }
+    }
+
+    // Körs även när routen ändras, t.ex. när man väljer en annan turnering
+    protected override async Task OnParametersSetAsync()
+    {
+        selectedTournament = null;
+        participants = null;
+        newParticipant = new CreateParticipantModel();
+        successMessage = null;
+
+        if (TournamentId == null)
+        {
+            return;
+        }
+
+        // Turneringarna hämtas i OnInitializedAsync, som alltid körs innan
+        selectedTournament = tournaments?.FirstOrDefault(t => t.Id == TournamentId);
+
+        if (selectedTournament == null)
+        {
+            return;
+        }
+
+        await LoadParticipants();
+    }
+
+    private async Task LoadParticipants()
+    {
+        try
+        {
+            participants = await Http.GetFromJsonAsync<List<ParticipantModel>>($"tournaments/{TournamentId}/participants");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "kunde inte hämta deltagare";
+        }
+    }
+
+    private async Task AddParticipant()
+    {
+        successMessage = null;
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync($"tournaments/{TournamentId}/participants", newParticipant);
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"{newParticipant.Name} lades till";
+                newParticipant = new CreateParticipantModel();
+                await LoadParticipants();
+            }
+            else
+            {
+                errorMessage = await GetErrorMessage(response);
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "kunde inte nå APIet";
+        }
+
+        isSubmitting = false;
+    }
+
+    private async Task DeleteParticipant(ParticipantModel participant)
+    {
+        successMessage = null;
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"participants/{participant.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"{participant.Name} togs bort";
+                await LoadParticipants();
+            }
+            else
+            {
+                errorMessage = await GetErrorMessage(response);
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "kunde inte nå APIet";
+        }
+
+        isSubmitting = false;
+    }
+
+    // APIet skickar felmeddelandet som en JSON-sträng vid 400 och 404
+    private static async Task<string> GetErrorMessage(HttpResponseMessage response)
+    {
+        if (response.StatusCode is not (HttpStatusCode.BadRequest or HttpStatusCode.NotFound))
+        {
+            return "något gick fel";
+        }
+
+        try
+        {
+            return await response.Content.ReadFromJsonAsync<string>() ?? "något gick fel";
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return await response.Content.ReadAsStringAsync();
+        }
+    }
+
+    private void OnTournamentChanged(ChangeEventArgs e)
+    {
+        // Byter route så att den valda turneringen syns i URL:en och kan länkas till
+        var url = int.TryParse(e.Value?.ToString(), out var id)
+            ? $"tournaments/{id}/participants"
+            : "participants";
+
+        errorMessage = null;
+        Navigation.NavigateTo(url);
+    }
+}
