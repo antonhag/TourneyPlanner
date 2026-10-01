@@ -14,9 +14,40 @@ else
     <ul class="list-group mb-3">
         @foreach (var participant in participants)
         {
-            <li class="list-group-item">@participant.Name</li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@participant.Name</span>
+                @if (IsDraft) @* visar endast ta bort knappen om turneringen har status Draft, vill ej kunna ta bort deltagare efter turneringen har startat. *@
+                {
+                    @* skickar med hela participantobjektet istället för endat ID, detta för att kunna visa borttagna deltagarens namn. *@
+                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteParticipantAsync(participant)">Ta bort</button> 
+                }
+            </li>
         }
     </ul>
+}
+
+
+@* öppnar endast formuläret ifall turneringens id i URL:en har sin status satt till "Draft" eftersom det ej ska gå att ändra deltagare efter turneringen har startat. *@
+@if (IsDraft)
+{
+    <EditForm Model="createModel" OnValidSubmit="AddParticipantAsync" class="mb-3">
+        <DataAnnotationsValidator/> @* lägger attributen på modellen, alltså att name är required och har en maxlängd på 25 tecken. *@
+        <ValidationSummary/> @* visar felmeddelande från attributerna, t.ex ifall namn saknas så visar det "Namn krävs" i UI:et. *@
+        
+        <div class="input-group">
+            <InputText class="form-control" placeholder="Namn" @bind-Value="createModel.Name" />
+            <button type="submit" class="btn btn-primary ">Lägg till</button>
+        </div>
+    </EditForm>
+}
+else
+{
+    <p class="text-muted">Deltagare kan ej ändras efter turneringen har startat.</p>
+}
+
+@if (successMessage != null)
+{
+    <div class="alert alert-success mt-2">@successMessage</div>  
 }
 
 @if (errorMessage != null)
@@ -31,7 +62,10 @@ else
     public bool IsDraft { get; set; }
     
     private List<ParticipantModel>? participants;
+    private CreateParticipantModel createModel = new();
     private string? errorMessage;
+    private string? successMessage;
+    
 
     // körs när komponenten visas och när TournamentId ändras
     protected override async Task OnParametersSetAsync()
@@ -49,6 +83,58 @@ else
         {
             errorMessage = "Kunde inte hämta deltagare";
             participants = new List<ParticipantModel>();
+        }
+    }
+
+    private async Task AddParticipantAsync()
+    {
+        successMessage = null;
+        errorMessage = null;
+        
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync($"tournaments/{TournamentId}/participants", createModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"{createModel.Name} har lagts till";
+                createModel = new CreateParticipantModel(); // tömmer namn fältet för att lägga till nya deltagare
+                await LoadParticipantsAsync(); // uppdaterar listan med deltagare
+            }
+            else
+            {
+                // visar api-felmeddelande
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå API";
+        }
+    }
+
+    private async Task DeleteParticipantAsync(ParticipantModel participant)
+    {
+        successMessage = null;
+        errorMessage = null;
+
+        try
+        {
+            var response = await HttpClient.DeleteAsync($"participants/{participant.Id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"{participant.Name} har tagits bort";
+                await LoadParticipantsAsync();
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå API";
         }
     }
 }
