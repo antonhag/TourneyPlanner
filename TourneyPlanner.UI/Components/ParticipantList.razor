@@ -15,11 +15,26 @@ else
         @foreach (var participant in participants)
         {
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>@participant.Name</span>
-                @if (IsDraft) @* visar endast ta bort knappen om turneringen har status Draft, vill ej kunna ta bort deltagare efter turneringen har startat. *@
+                @if (editingId == participant.Id) @* kollar ifall editingId har ett deltagar id, isåfall öppnas textfältet med spara/avbryt knappar. *@
                 {
-                    @* skickar med hela participantobjektet istället för endat ID, detta för att kunna visa borttagna deltagarens namn. *@
-                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteParticipantAsync(participant)">Ta bort</button> 
+                    <input class="form-control form-control-sm me-2" @bind="editName" />
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-success btn-sm" @onclick="() => UpdateParticipantAsync(participant.Id)">Spara</button>
+                        <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Avbryt</button>
+                    </div>
+                }
+                else
+                {
+                    <span>@participant.Name</span>
+                    @if (IsDraft) @* visar endast ta bort/redigera knappen om turneringen har status Draft, vill ej kunna ta bort/redigera deltagare efter turneringen har startat. *@
+                    {
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(participant)">Redigera</button>
+                            @* skickar med hela participantobjektet istället för endat ID, detta för att kunna visa borttagna deltagarens namn. *@
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteParticipantAsync(participant)">Ta bort</button>
+                        </div>
+                        
+                    }
                 }
             </li>
         }
@@ -63,9 +78,12 @@ else
     
     private List<ParticipantModel>? participants;
     private CreateParticipantModel createModel = new();
+    
     private string? errorMessage;
     private string? successMessage;
-    
+
+    private int? editingId;
+    private string editName = string.Empty;
 
     // körs när komponenten visas och när TournamentId ändras
     protected override async Task OnParametersSetAsync()
@@ -125,6 +143,43 @@ else
             if (response.IsSuccessStatusCode)
             {
                 successMessage = $"{participant.Name} har tagits bort";
+                await LoadParticipantsAsync();
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå API";
+        }
+    }
+
+    private void StartEdit(ParticipantModel participant)
+    {
+        editingId = participant.Id;
+        editName = participant.Name;
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+    }
+
+    private async Task UpdateParticipantAsync(int id)
+    {
+        successMessage = null;
+        errorMessage = null;
+
+        try
+        {
+            var response = await HttpClient.PutAsJsonAsync($"participants/{id}", new { Name = editName });
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "Deltagare uppdaterad";
+                editingId = null;
                 await LoadParticipantsAsync();
             }
             else
