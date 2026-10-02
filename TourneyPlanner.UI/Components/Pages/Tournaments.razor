@@ -1,0 +1,136 @@
+﻿@page "/tournaments"
+@rendermode InteractiveServer
+@using System.Drawing
+@using System.Net
+@using TourneyPlanner.UI.Models
+@inject HttpClient Http
+
+<PageTitle>Turneringar</PageTitle>
+
+<h1>Turneingar</h1>
+
+<a class="btn btn-primary mb-3" href="create-tournament">Skapa ny</a>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (isLoading == true)
+{
+    <p>Laddar..</p>
+}
+else if (tournaments.Count == 0)
+{
+    <p>Det finns inga turneringar </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th> Namn</th>
+            <th>Status</th>
+            <th>Start</th>
+            <th>Slut</th>
+            <th>Antal</th>
+            <th>Åtgärder</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var t in tournaments)
+        {
+            <tr>
+                <td>@t.Name</td>
+                <td>@StatusText(t.Status)</td>
+                <td>@t.StartDate.ToString("yyyy-MM-dd")</td>
+                <td>@t.EndDate.ToString("yyyy-MM-dd")</td>
+                <td>@t.Size</td>
+                <td>
+                    <a class="btn btn-sm btn-outline-primary" href="tournaments/@t.Id/participants">Hantera deltagare</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="tournaments/@t.Id/edit">Redigera</a> 
+                    @if (t.Status == "Draft")
+                    {
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(t)">Ta bort</button>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<TournamentModel> tournaments = new();
+    private string? errorMessage;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTournaments();
+    }
+
+    private async Task LoadTournaments()
+    {
+        isLoading = true;
+
+        try
+        {
+            tournaments = await Http.GetFromJsonAsync<List<TournamentModel>>("tournaments") ?? new();
+        }
+        catch (HttpRequestException e)
+        {
+            errorMessage = "kunde inte nå APIet";
+        }
+        
+        isLoading = false;
+    }
+
+    private async Task Delete(TournamentModel tournament)
+    {
+        errorMessage = null;
+
+        try
+        {
+            var response =  await Http.DeleteAsync("tournaments/" + tournament.Id);
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+            else if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+            {
+                errorMessage = "Något gfick fel försök igen";
+            }
+            else
+            {
+                await LoadTournaments();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå APIet";
+        }
+    }
+
+    private static string StatusText(string status)
+    {
+        if (status == "Draft")
+        {
+            return "Utkast";
+        }
+        if (status == "Active")
+        {
+            return "Pågående";
+        }
+        if (status == "Finished")
+        {
+            return "Avslutad";
+        }
+        
+        return status;
+    }
+    
+
+}
