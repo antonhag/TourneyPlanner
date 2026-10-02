@@ -45,6 +45,7 @@ else
 @* öppnar endast formuläret ifall turneringens id i URL:en har sin status satt till "Draft" eftersom det ej ska gå att ändra deltagare efter turneringen har startat. *@
 @if (IsDraft)
 {
+    <h4>Lägg till en deltagare</h4>
     <EditForm Model="createModel" OnValidSubmit="AddParticipantAsync" class="mb-3">
         <DataAnnotationsValidator/> @* lägger attributen på modellen, alltså att name är required och har en maxlängd på 25 tecken. *@
         <ValidationSummary/> @* visar felmeddelande från attributerna, t.ex ifall namn saknas så visar det "Namn krävs" i UI:et. *@
@@ -54,6 +55,15 @@ else
             <button type="submit" class="btn btn-primary ">Lägg till</button>
         </div>
     </EditForm>
+    
+    <br/>
+    
+    <h4>Lägg till flera deltagare</h4>
+    <div class="mb-3">
+        <label class="form-label">Lägg till flera (ett namn per rad)</label>
+        <textarea class="form-control mb-2" rows="10" @bind="batchNames"></textarea>
+        <button class="btn btn-primary" @onclick="AddBatchParticipantsAsync">Lägg till flera</button>
+    </div>
 }
 else
 {
@@ -84,6 +94,8 @@ else
 
     private int? editingId;
     private string editName = string.Empty;
+    
+    private string batchNames = string.Empty;
 
     // körs när komponenten visas och när TournamentId ändras
     protected override async Task OnParametersSetAsync()
@@ -184,6 +196,46 @@ else
             }
             else
             {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå API";
+        }
+    }
+
+    private async Task AddBatchParticipantsAsync()
+    {
+        successMessage = null;
+        errorMessage = null;
+        
+        // delar upp texten per rad och hoppar över tomma rader samt trimmar mellanslag
+        var names = batchNames.Split('\n',
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+        if (names.Count == 0)
+        {
+            errorMessage = "Inga namn angivna";
+            return;
+        }
+        
+        // gör om varje namn till en CreateParticipantModel
+        var participants = names.Select(name => new CreateParticipantModel { Name = name }).ToList();
+
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync($"tournaments/{TournamentId}/participants/batch", participants);
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"{names.Count} deltagare har lagts till";
+                batchNames = string.Empty; // rensar formuläret
+                await LoadParticipantsAsync();
+            }
+            else
+            {
+                // visar api felmeddelande
                 errorMessage = await response.Content.ReadAsStringAsync();
             }
         }
