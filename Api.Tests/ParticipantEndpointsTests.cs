@@ -24,7 +24,12 @@ public class ParticipantEndpointsTests : IClassFixture<CustomWebApplicationFacto
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<TourneyPlannerDbContext>();
 
-        var tournament = new Tournament { Name = "Padel 2026", StartDate = DateTime.Today.AddDays(1) };
+        var tournament = new Tournament
+        {
+            Name = "Padel 2026", 
+            StartDate = DateTime.Today.AddDays(1),
+            Size = 4
+        };
         db.Tournaments.Add(tournament);
         await db.SaveChangesAsync();
         

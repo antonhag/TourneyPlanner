@@ -24,13 +24,15 @@ public class ParticipantServiceTests
         _tournamentRepository.Tournaments.Add(new Tournament 
         { Id = DraftTournamentId,
                 Name = "Padel 2026",
-                TournamentStatus = Tournament.Status.Draft 
+                TournamentStatus = Tournament.Status.Draft,
+                Size = 4
         });
         _tournamentRepository.Tournaments.Add(new Tournament
         {
             Id = ActiveTournamentId,
             Name = "Fotbollscup 2026",
-            TournamentStatus = Tournament.Status.Active
+            TournamentStatus = Tournament.Status.Active,
+            Size = 4
         });
     }
 
@@ -80,6 +82,36 @@ public class ParticipantServiceTests
         // Act and assert
         await Assert.ThrowsAsync<ValidationException>(() => _sut.AddParticipantAsync(DraftTournamentId, new CreateParticipantDto { Name = "Legenderna" }));
         Assert.Single(_participantRepository.Participants);
+    }
+
+    [Fact]
+    public async Task AddParticipant_TournamentFull_DoesNotSave()
+    {
+        // Arrange. där vi fyller turnering till 4 alltså full
+        for (int i = 1; i <= 4; i++)
+        {
+            await _sut.AddParticipantAsync(DraftTournamentId, new CreateParticipantDto { Name = $"Lag {i}" });
+        }
+
+        // Act and assert. lägger till en femte deltagare
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.AddParticipantAsync(DraftTournamentId, new CreateParticipantDto { Name = "Lag 5" }));
+        Assert.Equal(4, _participantRepository.Participants.Count);
+    }
+
+    [Fact]
+    public async Task AddParticipants_InsertLargerThanRoomLeft_DoesNotSave()
+    {
+        // Arrange. fyller turneringen till 3/4
+        for (int i = 1; i <= 3; i++)
+        {
+            await _sut.AddParticipantAsync(DraftTournamentId, new CreateParticipantDto { Name = $"Lag {i}" });
+        }
+        
+        var dtos = new List<CreateParticipantDto> { new() {Name = "Lag 4"}, new() {Name = "Lag 5"} };
+        
+        // Act and assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.AddParticipantsAsync(DraftTournamentId, dtos));
+        Assert.Equal(3, _participantRepository.Participants.Count);
     }
     
     
