@@ -19,10 +19,15 @@ public class ParticipantService : IParticipantService
 
     public async Task AddParticipantAsync(int tournamentId, CreateParticipantDto dto)
     {
-        await GetDraftTournamentAsync(tournamentId);
+        var tournament = await GetDraftTournamentAsync(tournamentId);
 
         var existing = await _participantRepository.GetByTournamentIdAsync(tournamentId);
 
+        if (existing.Count >= tournament.Size)
+        {
+            throw new ValidationException("The tournament is full");
+        }
+        
         var participant = new Participant
         {
             TournamentId = tournamentId,
@@ -41,9 +46,15 @@ public class ParticipantService : IParticipantService
             throw new ValidationException("At least one participant is required");
         }
         
-        await GetDraftTournamentAsync(tournamentId);
+        var tournament = await GetDraftTournamentAsync(tournamentId);
         
         var existing = await _participantRepository.GetByTournamentIdAsync(tournamentId);
+
+        // alla nya inmatningar i batch inserten måste få plats, annars kastar metoden ett undantag och ingen läggs till.
+        if (existing.Count + dtos.Count > tournament.Size)
+        {
+            throw new ValidationException($"The tournament only has room for {tournament.Size - existing.Count} more participants");
+        }
         
         // Validerar alla deltagare innan någon sparas, antingen så att alla sparas eller ingen.
         var participants = new List<Participant>();
