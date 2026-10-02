@@ -1,0 +1,133 @@
+﻿@page "/tournaments/{Id:int}/edit"
+@rendermode InteractiveServer
+@using System.Net
+@using TourneyPlanner.UI.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Redigera turnering</PageTitle>
+
+<a href="tournaments">Tillbaka till listan</a>
+
+<h1>Redigera</h1>
+
+@if (isLoading == true)
+{
+    <p>Laddar..</p>
+}
+else if (model != null)
+{
+    <EditForm Model="model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ValidationSummary></ValidationSummary>
+        
+        <div class="mb-3">
+            <label class="form-label">Namn</label>
+            <InputText class="form-control" @bind-Value="model.Name"></InputText>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Startdatum</label>
+            <InputDate class="form-control" @bind-Value="model.StartDate" min="@DateTime.Today.ToString("yyyy-MM-dd")"></InputDate>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Slutdatum</label>
+            <InputDate class="form-control" @bind-Value="model.EndDate" min="@model.StartDate.ToString("yyyy-MM-dd")"></InputDate>
+        </div>
+             
+        <div class="mb-3">
+            <label class="form-label">Antal deltagare</label>
+            <InputNumber class="form-control" @bind-Value="model.Size"></InputNumber>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">Spara</button>
+    </EditForm>
+}
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private UpdateTournamentModel? model;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSubmitting;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.GetAsync($"/tournaments/{Id}");
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                errorMessage = "Turnering hitades inte";
+            }
+            else if (response.IsSuccessStatusCode)
+            {
+                var tournament = await response.Content.ReadFromJsonAsync<TournamentModel>();
+
+                if (tournament != null)
+                {
+                    model = new UpdateTournamentModel
+                    {
+                        Name = tournament.Name,
+                        StartDate = tournament.StartDate,
+                        EndDate = tournament.EndDate,
+                        Size = tournament.Size,
+                    };
+                }
+            }
+            else
+            {
+                errorMessage = "Något gick fel";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå APIet";
+        }
+        isLoading = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"/tournaments/{Id}", model);
+            if (response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo($"tournaments/{Id}");
+            }
+            else if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+            else if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                errorMessage = "Turnering hittades inte";
+            }
+            else
+            {
+                errorMessage = "Något gick fel";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "kunde inte nå APiet";
+        }
+        isSubmitting = false;
+    }
+}

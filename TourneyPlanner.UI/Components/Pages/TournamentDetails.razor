@@ -1,0 +1,121 @@
+﻿@page "/tournaments/{Id:int}"
+@rendermode InteractiveServer
+@using System.Net
+@using TourneyPlanner.UI.Models
+@inject HttpClient Http
+
+
+
+
+
+
+<!--   Inte länkat i UIn för tillfället, behåller denna ifall vi vill återanvända den för något eller när den gör mer nytta  -->
+
+
+
+
+<PageTitle>Turnering</PageTitle>
+
+<a href="tournaments">Tillbaka till listan</a>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@if (isLoading == true)
+{
+    <p>Laddar,,</p>
+    
+}
+else if (tournament != null)
+{
+    <h1>@tournament.Name</h1>
+    
+    <table class="table table-borderless">
+        <tbody>
+        <tr>
+            <th style="width: auto">Status</th>
+            <td>@StatusText(tournament.Status)</td>
+        </tr>
+        <tr>
+            <th>Startdatum</th>
+            <td>@tournament.StartDate.ToString("yyyy-MM-dd")</td>
+        </tr>
+        <tr>
+            <th>Slutdatum</th>
+            <td>@tournament.EndDate.ToString("yyyy-MM-dd")</td>
+        </tr>
+        <tr>
+            <th>Antal deltagare</th>
+            <td>@tournament.Size</td>
+        </tr>
+        </tbody>
+    </table>
+    
+    @if (tournament.Status != "Active")
+    {
+        <a class="btn btn-outline-secondary" href="tournaments/@tournament.Id/??">Redigera</a> <!--glöm ej redigera redirect  -->
+    }
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private TournamentModel? tournament;
+    private string? errorMessage;
+    private bool isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.GetAsync($"/tournaments/{Id}");
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                tournament = null;
+                errorMessage = "Tournament ej hittad";
+            }
+            else if (response.IsSuccessStatusCode)
+            {
+                tournament = await response.Content.ReadFromJsonAsync<TournamentModel>();
+            }
+            else
+            {
+                errorMessage = "Något gick fel";
+            }
+            
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå APIet";
+        }
+        
+        isLoading = false;
+        
+    }
+    
+    private static string StatusText(string status)
+    {
+        if (status == "Draft")
+        {
+            return "Utkast";
+        }
+        if (status == "Active")
+        {
+            return "Pågående";
+        }
+        if (status == "Finished")
+        {
+            return "Avslutad";
+        }
+        
+        return status;
+    }
+
+}
