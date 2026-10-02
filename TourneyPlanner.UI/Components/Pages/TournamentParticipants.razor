@@ -1,0 +1,44 @@
+@page "/tournaments/{Id:int}/participants"
+@rendermode InteractiveServer
+@using TourneyPlanner.UI.Models
+@inject HttpClient Client
+
+
+<PageTitle>Deltagare</PageTitle>
+
+@if (tournament == null)
+{
+    <p>@(errorMessage ?? "Laddar turnering...")</p>
+}
+else
+{
+    <h1>Deltagare i @tournament.Name</h1>
+    <ParticipantList tournamentId="@Id" IsDraft="@(tournament.Status == "Draft")"/>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private TournmanentInfo? tournament;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            tournament = await Client.GetFromJsonAsync<TournmanentInfo>($"tournaments/{Id}");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Turneringen kunde inte hittas";
+        }
+    }
+
+    private class TournmanentInfo
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+
+}
