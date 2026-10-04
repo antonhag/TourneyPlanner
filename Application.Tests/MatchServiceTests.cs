@@ -11,11 +11,18 @@ public class MatchServiceTests
 
     private readonly FakeMatchRepository _matchRepository = new();
     private readonly FakeParticipantRepository _participantRepository = new();
+    private readonly FakeTournamentRepository _tournamentRepository = new();
     private readonly MatchService _sut;
 
     public MatchServiceTests()
     {
-        _sut = new MatchService(_matchRepository, _participantRepository);
+        _sut = new MatchService(_matchRepository, _participantRepository, _tournamentRepository);
+        // Turneringen som alla tester använder, status är draft som standard
+        _tournamentRepository.Tournaments.Add(new Tournament()
+        {
+            Id = TournamentId,
+            Name = "Paddel 2026"
+        });
     }
 
     // Hjälpmetod som lägger in X deltagare i fake-repot 

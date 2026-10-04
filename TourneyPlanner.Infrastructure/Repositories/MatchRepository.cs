@@ -8,7 +8,7 @@ namespace TourneyPlanner.Infrastructure.Repositories;
 public class MatchRepository : IMatchRepository
 {
     private readonly TourneyPlannerDbContext _context;
-    
+
     public MatchRepository(TourneyPlannerDbContext context)
     {
         _context = context;
@@ -23,5 +23,16 @@ public class MatchRepository : IMatchRepository
     {
         _context.Matches.AddRange(matches);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveRangeAsync(List<Match> matches)
+    {
+        _context.Matches.RemoveRange(matches);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<Match>> GetTournamentMatchesAsync(int tournamentId)
+    {
+        return await _context.Matches.Where(m => m.TournamentId == tournamentId).ToListAsync();
     }
 }
