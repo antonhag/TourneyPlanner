@@ -10,7 +10,9 @@ public class Tournament
     public string Name { get; set; } = string.Empty;
     public Status TournamentStatus { get; set; } = Status.Draft;
     public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    
+    public DateTime CreatedAt { get; set; }
     
     public int Size { get; set; }
 

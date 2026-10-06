@@ -7,6 +7,7 @@ public class TournamentDto
     public string Status { get; set; } = string.Empty;
     
     public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public DateTime CreatedAt { get; set; }
     public int Size { get; set; }
 }

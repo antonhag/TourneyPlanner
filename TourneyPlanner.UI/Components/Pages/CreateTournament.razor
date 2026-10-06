@@ -22,10 +22,7 @@
         <InputDate class="form-control" @bind-Value="model.StartDate" min="@DateTime.Today.ToString("yyyy-MM-dd")"></InputDate>
     </div>
     
-    <div class="mb-3">
-        <label class="form-label">Slutdatum</label>
-        <InputDate class="form-control" @bind-Value="model.EndDate" min="@model.StartDate.ToString("yyyy-MM-dd")"></InputDate>
-    </div>
+   
     
     <div class="mb-3">
         <label class="form-label">Antal deltagare</label>
