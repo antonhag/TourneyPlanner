@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -14,38 +15,46 @@ public class CustomWebApplicationFactory<T> : WebApplicationFactory<T> where T :
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
+        {
+            var descriptor = services.SingleOrDefault(d => d.ServiceType ==
+                                                           typeof(DbContextOptions<TourneyPlannerDbContext>));
+            if (descriptor != null)
             {
-                var descriptor = services.SingleOrDefault(d => d.ServiceType ==
-                                                               typeof(DbContextOptions<TourneyPlannerDbContext>));
-                if (descriptor != null)
-                {
-                    services.Remove(descriptor);
-                }
+                services.Remove(descriptor);
+            }
 
-                var configDescriptor = services.SingleOrDefault(d => d.ServiceType ==
-                                                                     typeof(IDbContextOptionsConfiguration<
-                                                                         TourneyPlannerDbContext>));
-                if (configDescriptor != null)
-                {
-                    services.Remove(configDescriptor);
-                }
+            var configDescriptor = services.SingleOrDefault(d => d.ServiceType ==
+                                                                 typeof(IDbContextOptionsConfiguration<
+                                                                     TourneyPlannerDbContext>));
+            if (configDescriptor != null)
+            {
+                services.Remove(configDescriptor);
+            }
 
-                var dbConnectionDescriptor = services.SingleOrDefault(d => d.ServiceType ==
-                                                                           typeof(DbContextOptions<
-                                                                               TourneyPlannerDbContext>));
-                if (dbConnectionDescriptor != null)
-                {
-                    services.Remove(dbConnectionDescriptor);
-                }
+            var dbConnectionDescriptor = services.SingleOrDefault(d => d.ServiceType ==
+                                                                       typeof(DbContextOptions<
+                                                                           TourneyPlannerDbContext>));
+            if (dbConnectionDescriptor != null)
+            {
+                services.Remove(dbConnectionDescriptor);
+            }
 
-                services.AddSingleton<SqliteConnection>(container =>
-                {
-                    var connection = new SqliteConnection("DataSource=:memory:");
-                    connection.Open();
-                    return connection;
-                });
+            services.AddSingleton<SqliteConnection>(container =>
+            {
+                var connection = new SqliteConnection("DataSource=:memory:");
+                connection.Open();
+                return connection;
+            });
 
-                services.AddDbContext<TourneyPlannerDbContext>((container, options) =>
+            // Autentiserar varje testanrop inloggad som testanvändare som API:et använder
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+            })
+            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+
+            services.AddDbContext<TourneyPlannerDbContext>((container, options) =>
                 {
                     var connection = container.GetService<SqliteConnection>();
                     options.UseSqlite(connection);
