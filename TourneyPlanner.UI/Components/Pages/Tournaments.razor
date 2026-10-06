@@ -45,7 +45,7 @@ else
                 <td>@t.Name</td>
                 <td>@StatusText(t.Status)</td>
                 <td>@t.StartDate.ToString("yyyy-MM-dd")</td>
-                <td>@t.EndDate.ToString("yyyy-MM-dd")</td>
+                <td>@(t.EndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
                 <td>@t.Size</td>
                 <td>
                     <a class="btn btn-sm btn-outline-primary" href="tournaments/@t.Id/participants">Hantera deltagare</a>

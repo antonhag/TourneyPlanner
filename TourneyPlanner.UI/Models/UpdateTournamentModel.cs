@@ -9,8 +9,6 @@ public class UpdateTournamentModel
     public string Name { get; set; } = string.Empty;
     
     public DateTime StartDate { get; set; }
-    
-    public DateTime EndDate { get; set; }
 
     [Range(2, int.MaxValue, ErrorMessage = "Minst 2 deltagare")]
     public int Size { get; set; } = 2;

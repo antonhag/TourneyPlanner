@@ -44,7 +44,7 @@ else if (tournament != null)
         </tr>
         <tr>
             <th>Slutdatum</th>
-            <td>@tournament.EndDate.ToString("yyyy-MM-dd")</td>
+            <td>@(tournament.EndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
         </tr>
         <tr>
             <th>Antal deltagare</th>

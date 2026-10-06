@@ -21,7 +21,7 @@ public class TournamentService : ITournamentService
         {
             Name = dto.Name,
             StartDate = dto.StartDate,
-            EndDate = dto.EndDate,
+            CreatedAt = DateTime.Now,
             Size = dto.Size
         };
         
@@ -54,7 +54,6 @@ public class TournamentService : ITournamentService
         
         tournament.Name = dto.Name;
         tournament.StartDate = dto.StartDate;
-        tournament.EndDate = dto.EndDate;
         tournament.Size = dto.Size;
         
         ValidateTournament(tournament);
@@ -94,11 +93,7 @@ public class TournamentService : ITournamentService
         {
             throw new ValidationException("Startdate cannot be in the past");
         }
-
-        if (tournament.EndDate < tournament.StartDate)
-        {
-            throw new ValidationException("End date cannot be before startdate");
-        }
+        
 
         if (tournament.Size < 2)
         {
@@ -114,7 +109,7 @@ public class TournamentService : ITournamentService
             Name = tournament.Name,
             Status = tournament.TournamentStatus.ToString(),
             StartDate = tournament.StartDate,
-            EndDate = tournament.EndDate,
+            CreatedAt = tournament.CreatedAt,
             Size = tournament.Size
         };
     }

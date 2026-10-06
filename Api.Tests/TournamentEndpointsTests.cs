@@ -21,7 +21,7 @@ public class TournamentEndpointsTests : IClassFixture<CustomWebApplicationFactor
         {
             Name = "Paddel 2026",
             StartDate = DateTime.Today.AddDays(1),
-            EndDate = DateTime.Today.AddDays(2),
+           
             Size = 4
         };
 
@@ -40,7 +40,7 @@ public class TournamentEndpointsTests : IClassFixture<CustomWebApplicationFactor
         {
             Name = "",
             StartDate = DateTime.Today.AddDays(1),
-            EndDate = DateTime.Today.AddDays(2),
+            
             Size = 4
         };
 
@@ -59,7 +59,7 @@ public class TournamentEndpointsTests : IClassFixture<CustomWebApplicationFactor
         {
             Name = "Paddel 2026",
             StartDate = DateTime.Today.AddDays(-1),
-            EndDate = DateTime.Today.AddDays(2),
+           
             Size = 4
             
         };
@@ -80,7 +80,7 @@ public class TournamentEndpointsTests : IClassFixture<CustomWebApplicationFactor
         {
             Name = "Paddel 2026",
             StartDate = DateTime.Today.AddDays(1),
-            EndDate = DateTime.Today.AddDays(2),
+            
             Size = 1
         };
 
@@ -119,7 +119,7 @@ public class TournamentEndpointsTests : IClassFixture<CustomWebApplicationFactor
         {
             Name = "Paddel 2026",
             StartDate = DateTime.Today.AddDays(1),
-            EndDate = DateTime.Today.AddDays(2),
+            
             Size = 4
         };
 

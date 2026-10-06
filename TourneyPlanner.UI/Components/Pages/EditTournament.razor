@@ -31,10 +31,7 @@ else if (model != null)
             <InputDate class="form-control" @bind-Value="model.StartDate" min="@DateTime.Today.ToString("yyyy-MM-dd")"></InputDate>
         </div>
         
-        <div class="mb-3">
-            <label class="form-label">Slutdatum</label>
-            <InputDate class="form-control" @bind-Value="model.EndDate" min="@model.StartDate.ToString("yyyy-MM-dd")"></InputDate>
-        </div>
+      
              
         <div class="mb-3">
             <label class="form-label">Antal deltagare</label>
@@ -82,7 +79,7 @@ else if (model != null)
                     {
                         Name = tournament.Name,
                         StartDate = tournament.StartDate,
-                        EndDate = tournament.EndDate,
+                       
                         Size = tournament.Size,
                     };
                 }

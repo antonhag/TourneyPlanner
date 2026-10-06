@@ -25,7 +25,7 @@ public class TournamentServiceTests
         {
             Name = "Paddel 2026",
             StartDate = DateTime.Today.AddDays(1),
-            EndDate = DateTime.Today.AddDays(2),
+            
             Size = 4
         };
 
@@ -44,7 +44,7 @@ public class TournamentServiceTests
         {
             Name = "Paddel 2026",
             StartDate = DateTime.Today.AddDays(1),
-            EndDate = DateTime.Today.AddDays(2),
+            
             Size = 4
         };
         // Act
@@ -181,7 +181,7 @@ public class TournamentServiceTests
         {
             Name = "Cup B",
             StartDate = DateTime.Today.AddDays(3),
-            EndDate = DateTime.Today.AddDays(5),
+           
             Size = 8
         };
 
@@ -192,7 +192,7 @@ public class TournamentServiceTests
         var updated = _repository.Tournaments.Single();
         Assert.Equal("Cup B", updated.Name);
         Assert.Equal(DateTime.Today.AddDays(3), updated.StartDate);
-        Assert.Equal(DateTime.Today.AddDays(5), updated.EndDate);
+       
         Assert.Equal(8, updated.Size);
     }
 
@@ -204,7 +204,7 @@ public class TournamentServiceTests
         // Arrange
         _repository.Tournaments.Add(new Tournament { Id = 1, Name = "Cup A", TournamentStatus = status, StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 });
 
-        var dto = new UpdateTournamentDto { Name = "Cup B", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 };
+        var dto = new UpdateTournamentDto { Name = "Cup B", StartDate = DateTime.Today.AddDays(1),  Size = 4 };
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() => _sut.UpdateTournamentAsync(1, dto));
@@ -215,7 +215,7 @@ public class TournamentServiceTests
     public async Task UpdateTournament_MissingId_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var dto = new UpdateTournamentDto { Name = "Cup B", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 };
+        var dto = new UpdateTournamentDto { Name = "Cup B", StartDate = DateTime.Today.AddDays(1),  Size = 4 };
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.UpdateTournamentAsync(999, dto));
@@ -227,9 +227,26 @@ public class TournamentServiceTests
         // Arrange
         _repository.Tournaments.Add(new Tournament { Id = 1, Name = "Cup A", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 4 });
 
-        var dto = new UpdateTournamentDto { Name = "Cup A", StartDate = DateTime.Today.AddDays(1), EndDate = DateTime.Today.AddDays(2), Size = 1 };
+        var dto = new UpdateTournamentDto { Name = "Cup A", StartDate = DateTime.Today.AddDays(1),  Size = 1 };
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() => _sut.UpdateTournamentAsync(1, dto));
+    }
+
+    [Fact]
+    public async Task CreateTournament_SetsCreatedAtDate()
+    {
+        // Arrange
+        var dto = new CreateTournamentDto {Name = "TestCreateDate", StartDate = DateTime.Today.AddDays(1), Size = 4};
+        var before = DateTime.Now;
+        
+        // Act
+        await _sut.CreateTournamentAsync(dto);
+        
+        // Assert
+        var saved = Assert.Single(_repository.Tournaments);
+        
+        // Ifall vår actual är mellan before och Datetime.now så funkar testet som det ska
+        Assert.InRange(saved.CreatedAt, before, DateTime.Now);
     }
 }
