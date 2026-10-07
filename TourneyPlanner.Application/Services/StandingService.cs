@@ -84,6 +84,6 @@ public class StandingService : IStandingService
             }
         }
         
-        return standings;
+        return standings.OrderByDescending(s => s.Points).ToList();
     }
 }

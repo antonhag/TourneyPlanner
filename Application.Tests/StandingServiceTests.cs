@@ -112,4 +112,21 @@ public class StandingServiceTests
         Assert.All(standings, s => Assert.Equal(1, s.Points));
         Assert.All(standings, s => Assert.Equal(1, s.Drawn));
     }
+
+    [Fact]
+    public async Task GetStandings_SortsByPoints()
+    {
+        // Arrange
+        AddParticipant(3);
+        AddMatch(3, 1, 1, 0);
+        AddMatch(3, 2, 1, 0);
+
+        // Act
+        var standings = await _sut.GetStandingsAsync(TournamentId);
+
+        // Assert - deltagare 3 har flet poäng och ska ligga först i tabellen
+        Assert.Equal(3, standings[0].ParticipantId);
+        Assert.Equal(6, standings[0].Points);
+    }
+    
 }
