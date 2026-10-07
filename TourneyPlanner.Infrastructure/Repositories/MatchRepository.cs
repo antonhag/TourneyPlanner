@@ -14,7 +14,7 @@ public class MatchRepository : IMatchRepository
         _context = context;
     }
 
-    public async Task<bool> ExistsForTournamentAsync(int tournamentId) // Används ej 
+    public async Task<bool> ExistsForTournamentAsync(int tournamentId)
     {
         return await _context.Matches.AnyAsync(m => m.TournamentId == tournamentId );
     }
