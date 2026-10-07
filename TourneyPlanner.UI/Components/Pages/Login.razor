@@ -1,0 +1,113 @@
+﻿@page "/login"
+@using TourneyPlanner.UI.Models
+@inject HttpClient Http
+@inject AuthState AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>
+    Logga in
+</PageTitle>
+
+<h1>Logga in</h1>
+
+<EditForm Model="model" OnValidSubmit="HandleLogin">                                                                                                                                                                             
+      <DataAnnotationsValidator></DataAnnotationsValidator>                                                                                                                                                                        
+      <ValidationSummary></ValidationSummary>                                                                                                                                                                                      
+                                                                                                                                                                                                                                   
+      <div class="mb-3">                                                                                                                                                                                                           
+          <label class="form-label">E-post</label>                                                                                                                                                                                 
+          <InputText class="form-control" @bind-Value="model.Email"></InputText>                                                                                                                                                   
+      </div>                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                   
+      <div class="mb-3">                                                                                                                                                                                                           
+          <label class="form-label">Lösenord</label>                                                                                                                                                                               
+          <InputText type="password" class="form-control" @bind-Value="model.Password"></InputText>                                                                                                                                
+      </div>                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                   
+      <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">Logga in</button>                                                                                                                                     
+      <button type="button" class="btn btn-secondary" disabled="@IsSubmitting" @onclick="HandleRegister">Skapa konto</button>                                                                                                      
+</EditForm>  
+
+@if (successMessage != null)                                                                                                                                                                                                     
+{                                                                                                                                                                                                                                
+    <div class="alert alert-success mt-2">@successMessage</div>                                                                                                                                                                  
+}                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                   
+@if (errorMessage != null)                                                                                                                                                                                                       
+{                                                                                                                                                                                                                                
+    <div class="alert alert-danger mt-2">@errorMessage</div>                                                                                                                                                                     
+}
+
+@code {
+
+    private LoginModel model = new();
+    private string? errorMessage;
+    private string? successMessage;
+    private bool IsSubmitting;
+
+    private async Task HandleLogin()
+    {
+        successMessage = null;
+        errorMessage = null;
+        IsSubmitting = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("account/login", model);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                AuthState.Login(model.Email, result!.AccessToken);
+                Navigation.NavigateTo("tournaments");
+            }
+            else
+            {
+                errorMessage = "Fel e-post eller lösenord";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå API:et";
+        }
+
+        IsSubmitting = false;
+    }
+
+    private async Task HandleRegister()
+    {
+        successMessage = null;
+        errorMessage = null;
+
+        // skapa konto är inte submit, så validaringen körs inte automatiskt
+        if (string.IsNullOrEmpty(model.Email) || string.IsNullOrEmpty(model.Password))
+        {
+            errorMessage = "fyll i e-post och lösenord";
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            var responce = await Http.PostAsJsonAsync("account/register", model);
+            if (responce.IsSuccessStatusCode)
+            {
+                successMessage = "Kontot skapade och nu kan du logga in";
+            }
+            else
+            {
+                errorMessage = "Kunde inte skapa kontot, Lösenordet måste vara minst 6 tecken, en siffra, en stor och en liten bokstav och ett specialtecken. E-posten kan inte redan vara registerad";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå API:et";
+        }
+
+        IsSubmitting = false;
+    }
+    private class LoginResponse
+    {
+        public string AccessToken { get; set; } = string.Empty;
+    }
+}
