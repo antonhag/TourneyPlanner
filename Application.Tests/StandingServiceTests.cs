@@ -146,4 +146,20 @@ public class StandingServiceTests
         Assert.Equal(4, standings[0].ParticipantId);
         Assert.Equal(3, standings[1].ParticipantId);
     }
+
+    [Fact]
+    public async Task GetStandings_EqualPointsAndScoreDifference_SortsByScoreFor()
+    {
+        // Arrange - 3 och 4 har båda 3 poäng och +1 poängskillnad, men 4 har bättre gjorda mål/score
+        AddParticipant(4);  
+        AddMatch(3, 1, 1, 0);
+        AddMatch(4, 2, 3, 2);
+
+        // Act
+        var standings = await _sut.GetStandingsAsync(TournamentId);
+
+        // Assert - deltagare 4 ska ligga före 3
+        Assert.Equal(4, standings[0].ParticipantId);
+        Assert.Equal(3, standings[1].ParticipantId);
+    }
 }
