@@ -124,9 +124,26 @@ public class StandingServiceTests
         // Act
         var standings = await _sut.GetStandingsAsync(TournamentId);
 
-        // Assert - deltagare 3 har flet poäng och ska ligga först i tabellen
+        // Assert - deltagare 3 har flest poäng och ska ligga först i tabellen
         Assert.Equal(3, standings[0].ParticipantId);
         Assert.Equal(6, standings[0].Points);
     }
-    
+
+    [Fact]
+    public async Task GetStandings_EqualPoints_SortsByScoreDifference()
+    {
+        // Arrange
+        AddParticipant(4);  
+        AddMatch(3, 1, 1, 0);
+        AddMatch(3, 2, 1, 0);
+        AddMatch(4, 2, 2, 0);
+        AddMatch(4, 1, 3, 0);
+
+        // Act
+        var standings = await _sut.GetStandingsAsync(TournamentId);
+        
+        // Assert - kollar så att deltagare 4 ska ligga före 3
+        Assert.Equal(4, standings[0].ParticipantId);
+        Assert.Equal(3, standings[1].ParticipantId);
+    }
 }
