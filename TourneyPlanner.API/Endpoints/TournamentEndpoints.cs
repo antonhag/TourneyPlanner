@@ -12,13 +12,13 @@ public static class TournamentEndpoints
         var group = app.MapGroup("/tournaments");
 
         // Kopplar POST för tournaments till CreateTournament metoden
-        group.MapPost("/", CreateTournament).RequireAuthorization();
+        group.MapPost("/", CreateTournament);
 
         
         group.MapGet("/", GetAllTournaments);
         group.MapGet("/{id:int}", GetTournamentById);
-        group.MapPut("/{id:int}", UpdateTournament).RequireAuthorization();
-        group.MapDelete("/{id:int}", DeleteTournament).RequireAuthorization();
+        group.MapPut("/{id:int}", UpdateTournament);
+        group.MapDelete("/{id:int}", DeleteTournament);
     }
 
     // Metoden som skapar en tournament och som körs vid varje POST request

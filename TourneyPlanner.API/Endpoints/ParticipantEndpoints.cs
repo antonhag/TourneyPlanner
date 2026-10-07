@@ -10,15 +10,15 @@ public static class ParticipantEndpoints
     {
         // deltagare i en viss turnering
         var tournamentGroup = app.MapGroup("/tournaments/{tournamentId:int}/participants");
-        tournamentGroup.MapPost("/", AddParticipant).RequireAuthorization();
-        tournamentGroup.MapPost("/batch", AddParticipants).RequireAuthorization();
+        tournamentGroup.MapPost("/", AddParticipant);
+        tournamentGroup.MapPost("/batch", AddParticipants);
         tournamentGroup.MapGet("/", GetParticipantsByTournamentId);
         
         // en viss deltagare
         var participantGroup = app.MapGroup("/participants");
         participantGroup.MapGet("/{id:int}", GetParticipantById);
-        participantGroup.MapPut("/{id:int}", UpdateParticipant).RequireAuthorization();
-        participantGroup.MapDelete("/{id:int}", DeleteParticipant).RequireAuthorization();
+        participantGroup.MapPut("/{id:int}", UpdateParticipant);
+        participantGroup.MapDelete("/{id:int}", DeleteParticipant);
     }
 
     private static async Task<IResult> AddParticipant(int tournamentId, CreateParticipantDto dto, IParticipantService service)
