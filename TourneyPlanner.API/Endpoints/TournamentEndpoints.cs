@@ -14,7 +14,7 @@ public static class TournamentEndpoints
         // Kopplar POST för tournaments till CreateTournament metoden
         group.MapPost("/", CreateTournament);
 
-        
+        group.MapPost("/{id:int}/start", StartTournament);
         group.MapGet("/", GetAllTournaments);
         group.MapGet("/{id:int}", GetTournamentById);
         group.MapPut("/{id:int}", UpdateTournament);
@@ -75,11 +75,28 @@ public static class TournamentEndpoints
         }
     }
 
-    public static async Task<IResult> DeleteTournament(int id, ITournamentService service)
+    private static async Task<IResult> DeleteTournament(int id, ITournamentService service)
     {
         try
         {
             await service.DeleteTournamentAsync(id);
+            return Results.NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (ValidationException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> StartTournament(int id, ITournamentService service)
+    {
+        try
+        {
+            await service.StartTournamentAsync(id);
             return Results.NoContent();
         }
         catch (KeyNotFoundException ex)
