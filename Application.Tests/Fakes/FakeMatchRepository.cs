@@ -21,4 +21,19 @@ public class FakeMatchRepository : IMatchRepository
         }
         return Task.CompletedTask;
     }
+
+    public Task RemoveRangeAsync(List<Match> matches)
+    {
+        foreach (var match in matches)
+        {
+            Matches.Remove(match);
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<List<Match>> GetTournamentMatchesAsync(int tournamentId)
+    {
+        var result = Matches.Where(m => m.TournamentId == tournamentId).ToList();
+        return Task.FromResult(result);
+    }
 }
