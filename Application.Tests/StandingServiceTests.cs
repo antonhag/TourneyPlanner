@@ -74,4 +74,42 @@ public class StandingServiceTests
         // kollar så att alla deltagare i tabellen har 0 poäng eftesom inga matcher har spelats
         Assert.All(standings, s => Assert.Equal(0, s.Points)); 
     }
+
+    [Fact]
+    public async Task GetStandings_Win_ShouldGiveThreePointsToWinner()
+    {
+        // Arrange
+        AddParticipant(2);
+        
+        // skapar en match där participant med id 1 vann
+        AddMatch(1, 2, 2, 1);
+
+        // Act
+        var standings = await _sut.GetStandingsAsync(TournamentId);
+
+        // Assert
+        var winner = standings.Single(s => s.ParticipantId == 1);
+        var loser = standings.Single(s => s.ParticipantId == 2);
+        Assert.Equal(3, winner.Points); // kollar ifall vinnaren fick 3 poäng
+        Assert.Equal(1, winner.Won); // kollar ifall vinnaren har en match vunnen
+        Assert.Equal(0, loser.Points);  // kollar ifall förloraren har 0 poäng
+        Assert.Equal(1, loser.Lost); // kollar ifall förloraren en match förlorad
+    }
+
+    [Fact]
+    public async Task GetStandings_Draw_ShouldGiveOnePointEach()
+    {
+        // Arrange
+        AddParticipant(2);
+        
+        // skapar en match där det blir lika (1-1)
+        AddMatch(1, 2, 1, 1);
+
+        // Act
+        var standings = await _sut.GetStandingsAsync(TournamentId);
+
+        // Assert
+        Assert.All(standings, s => Assert.Equal(1, s.Points));
+        Assert.All(standings, s => Assert.Equal(1, s.Drawn));
+    }
 }
