@@ -58,4 +58,20 @@ public class StandingServiceTests
         // Act and Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GetStandingsAsync(999));
     }
+
+    [Fact]
+    public async Task GetStandings_NoMatchesPlayed_AllParticipantsWithZeroPoints()
+    {
+        // Arrange
+        AddParticipant(3);
+
+        // Act
+        var standings = await _sut.GetStandingsAsync(TournamentId);
+
+        // Assert
+        Assert.Equal(3, standings.Count); // kollar så att tabellen har exakt 3 rader
+        
+        // kollar så att alla deltagare i tabellen har 0 poäng eftesom inga matcher har spelats
+        Assert.All(standings, s => Assert.Equal(0, s.Points)); 
+    }
 }

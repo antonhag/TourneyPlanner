@@ -26,8 +26,19 @@ public class StandingService : IStandingService
             throw new KeyNotFoundException("Tournament not found");
         }
         
-        var standings = new List<StandingDto>();
+        var participants = await _participantRepository.GetByTournamentIdAsync(tournamentId);
 
+        var standings = new List<StandingDto>();
+        
+        foreach (var participant in participants)
+        {
+            standings.Add(new StandingDto
+            {
+                ParticipantId = participant.Id,
+                Name = participant.Name
+            });
+        }
+        
         return standings;
     }
 }
