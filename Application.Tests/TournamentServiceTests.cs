@@ -10,11 +10,14 @@ namespace Application.Tests;
 public class TournamentServiceTests
 {
     private readonly FakeTournamentRepository _repository = new();
+    private readonly FakeParticipantRepository _participantRepository = new();
+    private readonly FakeMatchRepository _matchRepository = new();
     private readonly TournamentService _sut;
     
     public TournamentServiceTests()
     {
-        _sut = new TournamentService(_repository);
+        var matchService = new MatchService(_matchRepository, _participantRepository, _repository);
+        _sut = new TournamentService(_repository, _participantRepository, matchService);
     }
     
     [Fact]
@@ -248,5 +251,86 @@ public class TournamentServiceTests
         
         // Ifall vår actual är mellan before och Datetime.now så funkar testet som det ska
         Assert.InRange(saved.CreatedAt, before, DateTime.Now);
+    }
+
+    [Fact]
+    public async Task StartTournament_ValidTounrament_BecomesActiveAndCreatesMatches()
+    {
+        // Arrange
+        AddTournament();
+        AddParticipants(4);
+        
+        // Act
+        await _sut.StartTournamentAsync(1);
+        
+        // Assert
+        Assert.Equal(Tournament.Status.Active, _repository.Tournaments.Single().TournamentStatus);
+        Assert.Equal(6, _matchRepository.Matches.Count);
+    }
+
+    [Fact]
+    public async Task StartTournament_MissingId_ThrowsKeyNotFoundException()
+    {
+        //Act and assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.StartTournamentAsync(999));
+    }
+
+    [Theory]
+    [InlineData(Tournament.Status.Active)]
+    [InlineData(Tournament.Status.Finished)]
+    public async Task StartTournament_NotDraft_ThrowsAndKeepsStatus(Tournament.Status status)
+    {
+        // Arrange
+        AddTournament(status);
+        AddParticipants(4);
+        
+        // Act
+        // Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.StartTournamentAsync(1));
+        Assert.Equal(status, _repository.Tournaments.Single().TournamentStatus);
+        Assert.Empty(_matchRepository.Matches);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public async Task StartTournament_TooFewParticipants_ThrowsAndStaysDraft(int participantCount)
+    {
+        // Arrange
+        AddTournament();
+        AddParticipants(participantCount);
+        
+        // Act
+        // Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.StartTournamentAsync(1));
+        Assert.Equal(Tournament.Status.Draft, _repository.Tournaments.Single().TournamentStatus);
+        Assert.Empty(_matchRepository.Matches);
+    }
+    
+    // hjälpmetoder
+    private void AddTournament(Tournament.Status status = Tournament.Status.Draft)
+    {
+        _repository.Tournaments.Add(new Tournament
+        {
+            Id = 1,
+            Name = "Paddel 2026",
+            TournamentStatus = status,
+            StartDate = DateTime.Today.AddDays(1),
+            EndDate = DateTime.Today.AddDays(2),
+            Size = 4
+        });
+    }
+
+    private void AddParticipants(int count)
+    {
+        for (var i = 1; i <= count; i++)
+        {
+            _participantRepository.Participants.Add(new Participant
+            {
+                Id = i,
+                TournamentId = 1,
+                Name = $"Player {i}"
+            });
+        }
     }
 }
