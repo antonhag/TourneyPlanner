@@ -1,4 +1,5 @@
 using TourneyPlanner.UI.Components;
+using TourneyPlanner.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +9,15 @@ builder.Services.AddRazorComponents()
 
 var apiUrl = builder.Configuration["ApiUrl"] ?? throw new InvalidOperationException("ApiUrl finns inte i config");
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiUrl) });
+builder.Services.AddScoped<AuthState>();
+builder.Services.AddScoped(sp =>
+{
+    var handler = new AuthHeaderHandler(sp.GetRequiredService<AuthState>())
+    {
+        InnerHandler = new HttpClientHandler()
+    };
+    return new HttpClient(handler) { BaseAddress = new Uri(apiUrl) };
+});
 
 var app = builder.Build();
 
