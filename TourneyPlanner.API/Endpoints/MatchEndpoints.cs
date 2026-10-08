@@ -9,9 +9,9 @@ public static class MatchEndpoints
     {
         // Schemat hör till en turnering men ligger här så att TorunamentEndpoints lämnas orörd
         var tournamentGroup = app.MapGroup("/tournaments");
-        tournamentGroup.MapPost("/{id:int}/schedule", GenerateSchedule);
+        tournamentGroup.MapPost("/{id:int}/schedule", GenerateSchedule).RequireAuthorization();
         tournamentGroup.MapGet("/{id:int}/schedule", GetSchedule);
-        tournamentGroup.MapPut("/{id:int}/schedule", UpdateSchedule);
+        tournamentGroup.MapPut("/{id:int}/schedule", UpdateSchedule).RequireAuthorization();
     }
 
     private static async Task<IResult> GenerateSchedule(int id, IMatchService service)
