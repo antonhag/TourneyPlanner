@@ -3,12 +3,15 @@
 @using System.Net
 @using TourneyPlanner.UI.Models
 @inject HttpClient Http
+@inject AuthState AuthState
 
 <PageTitle>Turneringar</PageTitle>
 
 <h1>Turneingar</h1>
-
-<a class="btn btn-primary mb-3" href="create-tournament">Skapa ny</a>
+@if (AuthState.IsLoggedIn)
+{
+    <a class="btn btn-primary mb-3" href="create-tournament">Skapa ny</a>
+}
 
 @if (errorMessage != null)
 {
@@ -48,10 +51,10 @@ else
                 <td>@t.Size</td>
                 <td>
                     <a class="btn btn-sm btn-primary" href="tournaments/@t.Id/participants">Hantera deltagare</a>
-                    
-                    @if (t.Status == "Draft")
+
+                    @if (t.Status == "Draft" && AuthState.IsLoggedIn)
                     {
-                        <a class="btn btn-sm btn-secondary" href="tournaments/@t.Id/edit">Redigera</a> 
+                        <a class="btn btn-sm btn-secondary" href="tournaments/@t.Id/edit">Redigera</a>
                         <button class="btn btn-sm btn-success" @onclick="() => Start(t)" disabled="@isStarting">Starta</button>
                         <button class="btn btn-sm btn-danger" @onclick="() => Delete(t)">Ta bort</button>
                     }

@@ -1,6 +1,7 @@
 @page "/tournaments/{Id:int}/schedule"
 @using TourneyPlanner.UI.Models
 @inject HttpClient HttpClient
+@inject AuthState AuthState
 
 <PageTitle>Matchschema</PageTitle>
 
@@ -58,7 +59,7 @@ else
                         </span>
                         
                     }
-                    @if (isActive)
+                    @if (isActive && AuthState.IsLoggedIn)
                     {
                         <div class="d-flex gap-1 align-items-center">
                             <input type="number" min="0" class="form-control form-control-sm" style="width: 60px" @bind="match.HomeInput" />

@@ -3,6 +3,7 @@
 @using TourneyPlanner.UI.Models
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject AuthState AuthState
 
 <PageTitle>Redigera turnering</PageTitle>
 
@@ -10,7 +11,13 @@
 
 <h1>Redigera</h1>
 
-@if (isLoading == true)
+@if (!AuthState.IsLoggedIn)
+{
+    <div class="alert alert-warning">
+        Du måste logga in för att redigera en turnering <a href="login">Logga in</a>
+    </div>
+}
+else if (isLoading == true)
 {
     <p>Laddar..</p>
 }
@@ -19,24 +26,24 @@ else if (model != null)
     <EditForm Model="model" OnValidSubmit="HandleSubmit">
         <DataAnnotationsValidator></DataAnnotationsValidator>
         <ValidationSummary></ValidationSummary>
-        
+
         <div class="mb-3">
             <label class="form-label">Namn</label>
             <InputText class="form-control" @bind-Value="model.Name"></InputText>
         </div>
-        
+
         <div class="mb-3">
             <label class="form-label">Startdatum</label>
             <InputDate class="form-control" @bind-Value="model.StartDate" min="@DateTime.Today.ToString("yyyy-MM-dd")"></InputDate>
         </div>
-        
-      
-             
+
+
+
         <div class="mb-3">
             <label class="form-label">Antal deltagare</label>
             <InputNumber class="form-control" @bind-Value="model.Size"></InputNumber>
         </div>
-        
+
         <button type="submit" class="btn btn-primary" disabled="@isSubmitting">Spara</button>
     </EditForm>
 }
