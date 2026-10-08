@@ -47,11 +47,13 @@ else
                 <td>@(t.EndDate?.ToString("yyyy-MM-dd") ?? "-")</td>
                 <td>@t.Size</td>
                 <td>
-                    <a class="btn btn-sm btn-outline-primary" href="tournaments/@t.Id/participants">Hantera deltagare</a>
-                    <a class="btn btn-sm btn-outline-secondary" href="tournaments/@t.Id/edit">Redigera</a> 
+                    <a class="btn btn-sm btn-primary" href="tournaments/@t.Id/participants">Hantera deltagare</a>
+                    
                     @if (t.Status == "Draft")
                     {
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(t)">Ta bort</button>
+                        <a class="btn btn-sm btn-secondary" href="tournaments/@t.Id/edit">Redigera</a> 
+                        <button class="btn btn-sm btn-success" @onclick="() => Start(t)" disabled="@isStarting">Starta</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(t)">Ta bort</button>
                     }
                 </td>
             </tr>
@@ -64,7 +66,8 @@ else
     private List<TournamentModel> tournaments = new();
     private string? errorMessage;
     private bool isLoading = true;
-
+    private bool isStarting;
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadTournaments();
@@ -78,12 +81,15 @@ else
         {
             tournaments = await Http.GetFromJsonAsync<List<TournamentModel>>("tournaments") ?? new();
         }
-        catch (HttpRequestException e)
+        catch (HttpRequestException)
         {
             errorMessage = "kunde inte nå APIet";
         }
-        
-        isLoading = false;
+        finally
+        {
+            isLoading = false;
+        } 
+       
     }
 
     private async Task Delete(TournamentModel tournament)
@@ -110,6 +116,45 @@ else
         catch (HttpRequestException)
         {
             errorMessage = "Kunde inte nå APIet";
+        }
+    }
+
+    private async Task Start(TournamentModel tournament)
+    {
+        // fix för errormessage även fast success
+        if (isStarting == true)
+        {
+            return;
+        }
+        
+        errorMessage = null;
+        isStarting = true;
+
+        try
+        {
+            var response = await Http.PostAsync($"tournaments/{tournament.Id}/start", null);
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+            }
+            else if (response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.NotFound)
+            {
+                // lyckad start eller om turneringen inte finns = ladda om listan
+                await LoadTournaments();
+            }
+            else
+            {
+                errorMessage = "Något gick fel";
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå APIet";
+        }
+        finally
+        {
+            isStarting = false;
         }
     }
 

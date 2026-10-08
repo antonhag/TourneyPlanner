@@ -10,4 +10,6 @@ public interface ITournamentService
     Task<TournamentDto> GetTournamentByIdAsync(int id);
     Task UpdateTournamentAsync(int id, UpdateTournamentDto dto);
     Task DeleteTournamentAsync(int id);
+
+    Task StartTournamentAsync(int id);
 }

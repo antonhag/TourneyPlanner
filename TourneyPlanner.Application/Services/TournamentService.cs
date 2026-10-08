@@ -9,10 +9,16 @@ namespace TourneyPlanner.Application.Services;
 public class TournamentService : ITournamentService
 {
     private readonly ITournamentRepository _tournamentRepository;
+    private readonly IParticipantRepository _participantRepository;
+    private readonly IMatchService _matchService;
 
-    public TournamentService(ITournamentRepository tournamentRepository)
+    public TournamentService(ITournamentRepository tournamentRepository,
+        IParticipantRepository participantRepository,
+        IMatchService matchService)
     {
         _tournamentRepository = tournamentRepository;
+        _participantRepository = participantRepository;
+        _matchService = matchService;
     }
 
     public async Task CreateTournamentAsync(CreateTournamentDto dto)
@@ -72,8 +78,30 @@ public class TournamentService : ITournamentService
         
         await _tournamentRepository.DeleteAsync(tournament);
     }
-    
-    
+
+    public async Task StartTournamentAsync(int id)
+    {
+        var tournament = await GetExistingTournamentAsync(id);
+
+        if (tournament.TournamentStatus != Tournament.Status.Draft)
+        {
+            throw new ValidationException("Only tournaments with status = draft can be started");
+        }
+
+        var participants = await _participantRepository.GetByTournamentIdAsync(id);
+
+        if (participants.Count < 2)
+        {
+            throw new ValidationException("Must have atleast 2 particiapnts to start the tournament");
+        }
+
+        await _matchService.GenerateScheduleAsync(id);
+        
+        tournament.TournamentStatus = Tournament.Status.Active;
+        await _tournamentRepository.UpdateAsync(tournament);
+    }
+
+
     private async Task<Tournament> GetExistingTournamentAsync(int id)
     {
         var tournament = await _tournamentRepository.GetByIdAsync(id);
