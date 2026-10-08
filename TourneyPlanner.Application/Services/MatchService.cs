@@ -75,9 +75,42 @@ public class MatchService : IMatchService
     public async Task<List<MatchDto>> GetAllScheduleAsync(int tournamentId)
     {
         await GetTournamentOrThrowsAsync(tournamentId);
+        
+        var participants = await _participantRepository.GetByTournamentIdAsync(tournamentId);
+        
+        // deltagarnas namn med ID som nyckel, krävs för att kunna visa namn i varje match
+        var names = participants.ToDictionary(p => p.Id, p => p.Name);
+        
         var matches = await _matchRepository.GetTournamentMatchesAsync(tournamentId);
         
-        return matches.Select(MapToDto).ToList();
+        return matches.Select(match => MapToDto(match, names)).ToList();
+    }
+
+    public async Task RegisterResultAsync(int matchId, UpdateMatchResultDto dto)
+    {
+        var match = await _matchRepository.GetByIdAsync(matchId);
+        
+        if (match == null)
+        {
+            throw new KeyNotFoundException("Match not found");
+        }
+        
+        var tournament = await GetTournamentOrThrowsAsync(match.TournamentId);
+
+        if (tournament.TournamentStatus != Tournament.Status.Active)
+        {
+            throw new ValidationException("Tournament must be active to register results");
+        }
+
+        if (dto.HomeScore < 0 || dto.AwayScore < 0)
+        {
+            throw new ValidationException("Score cannot be negative");
+        }
+        
+        match.HomeScore = dto.HomeScore;
+        match.AwayScore = dto.AwayScore;
+        
+        await _matchRepository.UpdateAsync(match);
     }
 
     private async Task<Tournament> GetTournamentOrThrowsAsync(int tournamentId)
@@ -136,7 +169,7 @@ public class MatchService : IMatchService
         return matches;
     }
 
-    private static MatchDto MapToDto(Match match)
+    private static MatchDto MapToDto(Match match, Dictionary<int, string> names)
     {
         return new MatchDto
         {
@@ -145,6 +178,8 @@ public class MatchService : IMatchService
             Round = match.Round,
             HomeParticipantId = match.HomeParticipantId,
             AwayParticipantId = match.AwayParticipantId,
+            HomeParticipantName = names[match.HomeParticipantId],
+            AwayParticipantName = names[match.AwayParticipantId],
             HomeScore = match.HomeScore,
             AwayScore = match.AwayScore,
         };

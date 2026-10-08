@@ -35,4 +35,15 @@ public class MatchRepository : IMatchRepository
     {
         return await _context.Matches.Where(m => m.TournamentId == tournamentId).ToListAsync();
     }
+
+    public async Task<Match?> GetByIdAsync(int id)
+    {
+        return await _context.Matches.FindAsync(id);
+    }
+
+    public async Task UpdateAsync(Match match)
+    {
+        _context.Matches.Update(match);
+        await _context.SaveChangesAsync();       
+    }
 }
