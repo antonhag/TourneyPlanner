@@ -86,6 +86,33 @@ public class MatchService : IMatchService
         return matches.Select(match => MapToDto(match, names)).ToList();
     }
 
+    public async Task RegisterResultAsync(int matchId, UpdateMatchResultDto dto)
+    {
+        var match = await _matchRepository.GetByIdAsync(matchId);
+        
+        if (match == null)
+        {
+            throw new KeyNotFoundException("Match not found");
+        }
+        
+        var tournament = await GetTournamentOrThrowsAsync(match.TournamentId);
+
+        if (tournament.TournamentStatus != Tournament.Status.Active)
+        {
+            throw new ValidationException("Tournament must be active to register results");
+        }
+
+        if (dto.HomeScore < 0 || dto.AwayScore < 0)
+        {
+            throw new ValidationException("Score cannot be negative");
+        }
+        
+        match.HomeScore = dto.HomeScore;
+        match.AwayScore = dto.AwayScore;
+        
+        await _matchRepository.UpdateAsync(match);
+    }
+
     private async Task<Tournament> GetTournamentOrThrowsAsync(int tournamentId)
     {
         var tournament = await _tournamentRepository.GetByIdAsync(tournamentId);

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Application.Tests.Fakes;
+using TourneyPlanner.Application.DTOs;
 using TourneyPlanner.Application.Services;
 using TourneyPlanner.Domain.Entities;
 
@@ -166,6 +167,66 @@ public class MatchServiceTests
             Assert.False(string.IsNullOrEmpty(m.AwayParticipantName));
             Assert.False(string.IsNullOrEmpty(m.HomeParticipantName));
         });
+    }
+
+    [Fact]
+    public async Task RegisterResult_ValidInput_SavesScore()
+    {
+        // Arrange
+        AddParticipant(2);
+        await _sut.GenerateScheduleAsync(TournamentId);
+        _tournamentRepository.Tournaments.First().TournamentStatus = Tournament.Status.Active;
+        var match = _matchRepository.Matches.First();
+
+        // Act
+        await _sut.RegisterResultAsync(match.Id, new UpdateMatchResultDto 
+                { HomeScore = 2, AwayScore = 1 });
+
+        // Assert
+        Assert.Equal(2, match.HomeScore);
+        Assert.Equal(1, match.AwayScore);
+    }
+
+    [Fact]
+    public async Task RegisterResult_MatchNotFound_ShouldThrow()
+    {
+        // Act and assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.RegisterResultAsync(1337, new UpdateMatchResultDto()));
+    }
+
+    [Fact]
+    public async Task RegisterResult_TournamentNotActive_DoesNotSave()
+    {
+        // Arrange
+        AddParticipant(2);
+        await _sut.GenerateScheduleAsync(TournamentId);
+        var match = _matchRepository.Matches.First();
+
+        // Act and assert
+        await Assert.ThrowsAsync<ValidationException>(() => 
+            _sut.RegisterResultAsync(match.Id, new UpdateMatchResultDto 
+            { HomeScore = 2, AwayScore = 1 }));
+        
+        Assert.Null(match.HomeScore);
+        Assert.Null(match.AwayScore);
+    }
+
+    [Fact]
+    public async Task RegisterResult_NegativeScore_DoesNotSave()
+    {
+        // Arrange
+        AddParticipant(2);
+        await _sut.GenerateScheduleAsync(TournamentId);
+        _tournamentRepository.Tournaments.First().TournamentStatus = Tournament.Status.Active;
+        var match = _matchRepository.Matches.First();
+        
+        // Act and assert
+        await Assert.ThrowsAsync<ValidationException>(() => 
+            _sut.RegisterResultAsync(match.Id, new UpdateMatchResultDto 
+            { HomeScore = -1, AwayScore = 1 }));
+        
+        Assert.Null(match.HomeScore);
+        Assert.Null(match.AwayScore);
     }
 }
 
