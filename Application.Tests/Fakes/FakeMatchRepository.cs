@@ -36,4 +36,15 @@ public class FakeMatchRepository : IMatchRepository
         var result = Matches.Where(m => m.TournamentId == tournamentId).ToList();
         return Task.FromResult(result);
     }
+
+    public Task<Match?> GetByIdAsync(int id)
+    {
+        return Task.FromResult(Matches.FirstOrDefault(m => m.Id == id));
+    }
+
+    // inget att göra här, objektet i listan är samma som servicen redan ändrat
+    public Task UpdateAsync(Match match)
+    {
+        return Task.CompletedTask;
+    }
 }
