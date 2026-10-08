@@ -10,4 +10,7 @@ public class MatchModel
     public string AwayParticipantName { get; set; } = string.Empty;
     public int? HomeScore { get; set; }
     public int? AwayScore { get; set; }
+
+    public int HomeInput { get; set; }
+    public int AwayInput { get; set; }
 }

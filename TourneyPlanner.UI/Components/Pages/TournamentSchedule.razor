@@ -8,6 +8,16 @@
 
 <a href="/tournaments/@Id">Tillbaka till turneringen</a>
 
+@if (successMessage != null)
+{
+    <div class="alert alert-success mt-2">@successMessage</div>
+}
+
+@if (saveErrorMessage != null)
+{
+    <div class="alert alert-danger mt-2">@saveErrorMessage</div>
+}
+
 @if (errorMessage != null)
 {
     <div class="alert alert-danger mt-2">@errorMessage</div>
@@ -22,10 +32,11 @@ else if (matches.Count == 0)
 }
 else
 {
-    foreach (var round in matches
-                 .GroupBy(m => m.Round)
-                 .OrderBy(g => g.Key))
-    {
+    <div style="max-width: 700px">
+        @foreach (var round in matches
+            .GroupBy(m => m.Round)
+            .OrderBy(g => g.Key))
+        {
         <h5 class="mt-3">Omgång @round.Key</h5>
         
         <ul class="list-group">
@@ -34,17 +45,34 @@ else
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     @if (match.HomeScore != null && match.AwayScore != null)
                     {
-                        <span>@match.HomeParticipantName <strong>@match.HomeScore - @match.AwayScore</strong> @match.AwayParticipantName</span>
+                        <span>
+                            @match.HomeParticipantName <strong>@match.HomeScore - @match.AwayScore</strong> @match.AwayParticipantName
+                            <span class="badge bg-success ms-2">Spelad</span>
+                        </span>
                     }
                     else
                     {
-                        <span>@match.HomeParticipantName - @match.AwayParticipantName</span>
-                        <span class="text-muted">Ej spelad</span>
+                        <span>
+                            @match.HomeParticipantName - @match.AwayParticipantName
+                            <span class="badge bg-secondary ms-2">Ej spelad</span>
+                        </span>
+                        
+                    }
+                    @if (isActive)
+                    {
+                        <div class="d-flex gap-1 align-items-center">
+                            <input type="number" min="0" class="form-control form-control-sm" style="width: 60px" @bind="match.HomeInput" />
+                            <span>-</span>
+                            <input type="number" min="0" class="form-control form-control-sm" style="width: 60px" @bind="match.AwayInput" />
+                            <button class="btn btn-primary btn-sm" @onclick="() => SaveResultAsync(match)">Spara</button>
+                        </div>
                     }
                 </li>
             }
         </ul>
-    }
+        }
+    </div>
+    
 }
 
 @code {
@@ -54,6 +82,10 @@ else
     
     private string? errorMessage;
     private string? successMessage;
+    private string? saveErrorMessage;
+
+    private TournamentInfo? tournament;
+    private bool isActive => tournament?.Status == "Active";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -65,12 +97,52 @@ else
     {
         try
         {
+            tournament = await HttpClient.GetFromJsonAsync<TournamentInfo>($"tournaments/{Id}");
+            
             matches = await HttpClient.GetFromJsonAsync<List<MatchModel>>($"tournaments/{Id}/schedule");
+
+            foreach (var match in matches!)
+            {
+                // använd värdet till vänster eller 0 om det är null
+                match.HomeInput = match.HomeScore ?? 0;
+                match.AwayInput = match.AwayScore ?? 0;
+            }
         }
         catch (HttpRequestException)
         {
             errorMessage = "Kunde inte hämta turneringsschemat";
             matches = new List<MatchModel>();
         }
+    }
+
+    private async Task SaveResultAsync(MatchModel match)
+    {
+        successMessage = null;
+        errorMessage = null;
+
+        try
+        {
+            var response = await HttpClient.PutAsJsonAsync($"matches/{match.Id}/result",
+                new { HomeScore = match.HomeInput, AwayScore = match.AwayInput });
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"{match.HomeParticipantName} {match.HomeInput} - {match.AwayInput} {match.AwayParticipantName} har sparats";
+                await LoadScheduleAsync();
+            }
+            else
+            {
+                saveErrorMessage = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Kunde inte nå API";
+        }
+    }
+
+    private class TournamentInfo
+    {
+        public string Status { get; set; } = string.Empty;
     }
 }
