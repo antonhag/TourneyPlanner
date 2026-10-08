@@ -1,5 +1,6 @@
 @using TourneyPlanner.UI.Models
 @inject HttpClient HttpClient
+@inject AuthState AuthState
 
 @if (participants == null)
 {
@@ -26,7 +27,7 @@ else
                 else
                 {
                     <span>@participant.Name</span>
-                    @if (IsDraft) @* visar endast ta bort/redigera knappen om turneringen har status Draft, vill ej kunna ta bort/redigera deltagare efter turneringen har startat. *@
+                    @if (IsDraft && AuthState.IsLoggedIn) @* visar endast ta bort/redigera knappen om turneringen har status Draft, vill ej kunna ta bort/redigera deltagare efter turneringen har startat. *@
                     {
                         <div class="d-flex gap-1">
                             <button class="btn btn-outline-primary btn-sm" @onclick="() => StartEdit(participant)">Redigera</button>
@@ -43,7 +44,11 @@ else
 
 
 @* öppnar endast formuläret ifall turneringens id i URL:en har sin status satt till "Draft" eftersom det ej ska gå att ändra deltagare efter turneringen har startat. *@
-@if (IsDraft)
+@if (!AuthState.IsLoggedIn)
+{
+    <p class="text-muted">Logga in för att ändra deltagare</p>
+}
+else if (IsDraft)
 {
     <h4>Lägg till en deltagare</h4>
     <EditForm Model="createModel" OnValidSubmit="AddParticipantAsync" class="mb-3">
