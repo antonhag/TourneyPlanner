@@ -68,5 +68,58 @@ public class MatchEndpointsTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-    
+
+    [Fact]
+    public async Task RegisterResult_ValidInput_ShouldReturn204AndSaves()
+    {
+        // Arrange
+        var tournamentId = await CreateTournamentWithParticipantsAsync();
+        await _client.PostAsync($"/tournaments/{tournamentId}/schedule", null);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<TourneyPlannerDbContext>();
+            var tournament = await db.Tournaments.FindAsync(tournamentId);
+            
+            tournament!.TournamentStatus = Tournament.Status.Active;
+            await db.SaveChangesAsync();
+        }
+        
+        var matches = await 
+            _client.GetFromJsonAsync<List<MatchDto>>($"/tournaments/{tournamentId}/schedule");
+
+        var matchId = matches![0].Id;
+
+        // Act
+        var response = await _client.PutAsJsonAsync
+        ($"/matches/{matchId}/result", new UpdateMatchResultDto
+        {
+            HomeScore = 2,
+            AwayScore = 1
+        });
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var updated = await _client.GetFromJsonAsync<List<MatchDto>>
+            ($"/tournaments/{tournamentId}/schedule");
+        
+        var match = updated!.Single(m => m.Id == matchId);
+        Assert.Equal(2, match.HomeScore);
+        Assert.Equal(1, match.AwayScore);
+    }
+
+    [Fact]
+    public async Task RegisterResult_MatchNotFound_ShouldReturn404()
+    {
+        // Act
+        var response = await _client.PutAsJsonAsync("/matches/1337/result",
+            new UpdateMatchResultDto
+            {
+                HomeScore = 2,
+                AwayScore = 1
+            });
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

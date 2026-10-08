@@ -1,9 +1,8 @@
-﻿namespace TourneyPlanner.Application.DTOs;
+namespace TourneyPlanner.UI.Models;
 
-public class MatchDto
+public class MatchModel
 {
     public int Id { get; set; }
-    public int TournamentId { get; set; }
     public int Round { get; set; }
     public int HomeParticipantId { get; set; }
     public int AwayParticipantId { get; set; }
@@ -11,4 +10,7 @@ public class MatchDto
     public string AwayParticipantName { get; set; } = string.Empty;
     public int? HomeScore { get; set; }
     public int? AwayScore { get; set; }
+
+    public int HomeInput { get; set; }
+    public int AwayInput { get; set; }
 }

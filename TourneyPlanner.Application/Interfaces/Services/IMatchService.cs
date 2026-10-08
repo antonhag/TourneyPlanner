@@ -10,4 +10,6 @@ public interface IMatchService
 
     Task<List<MatchDto>> GetAllScheduleAsync(int tournamentId);
     
+    Task RegisterResultAsync(int matchId, UpdateMatchResultDto dto);
+    
 }

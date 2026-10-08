@@ -1,4 +1,8 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@implements IDisposable
+@inject AuthState AuthState 
+@inject NavigationManager Navigation 
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">TourneyPlanner.UI</a>
     </div>
@@ -13,18 +17,54 @@
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
             </NavLink>
         </div>
-        
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="create-tournament">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Skapa turnering
-            </NavLink>
-        </div>
-        
+        @if (AuthState.IsLoggedIn)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="create-tournament">
+                    <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Skapa turnering
+                </NavLink>
+            </div>
+        }
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="tournaments">
                 Turneringar
             </NavLink>
         </div>
+        <div class="nav-item px-3">
+            @if (AuthState.IsLoggedIn)
+            {
+                <span class="nav-link text-light">@AuthState.Email</span>
+                <button type="button" class="btn btn-link nav-link" @onclick="Logout">Logga ut</button>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="login">Logga in</NavLink>
+            }
+        </div>
         
     </nav>
 </div>
+
+@code{
+
+    protected override void OnInitialized()
+    {
+        AuthState.OnChange += HandleAuthChanged; 
+    }
+
+    private void HandleAuthChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);  // " _ = " vi väntar inte på resultatet metvetet
+    }
+
+    private void Logout()
+    {
+        AuthState.Logout();
+        Navigation.NavigateTo("");
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= HandleAuthChanged;
+    }
+}
