@@ -24,6 +24,8 @@ builder.Services.AddScoped<IParticipantService, ParticipantService>();
 builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<IMatchService, MatchService>();
 
+builder.Services.AddScoped<IStandingService, StandingService>();
+
 // Identity
 builder.Services.AddAuthorization();
 builder.Services.AddIdentityApiEndpoints<IdentityUser>().AddEntityFrameworkStores<TourneyPlannerDbContext>();
@@ -47,5 +49,6 @@ app.MapGroup("/account").MapIdentityApi<IdentityUser>();
 app.MapTournamentEndpoints();
 app.MapMatchEndpoints();
 app.MapParticipantEndpoints();
+app.MapStandingsEndpoints();
 
 app.Run();
