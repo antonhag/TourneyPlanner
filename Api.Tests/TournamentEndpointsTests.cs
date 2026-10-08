@@ -170,7 +170,7 @@ public class TournamentEndpointsTests : IClassFixture<CustomWebApplicationFactor
         //Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
-
+    
     [Fact]
     public async Task StartTournament_TooFewParticipants_Returns400()
     {
@@ -183,6 +183,50 @@ public class TournamentEndpointsTests : IClassFixture<CustomWebApplicationFactor
         //Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task CompleteTournament_ValidTournament_Returns200_StatusFinished()
+    {
+        // Arrange
+        var tournamentId = await CreateActiveTournamentAsync(allMatchesPlayed: true);
+        
+        // Act
+        var response = await _client.PostAsync($"/tournaments/{tournamentId}/complete", null);
+        var winner = await response.Content.ReadFromJsonAsync<StandingDto>();
+        
+        var tournamentResponse = await _client.GetFromJsonAsync<TournamentDto>($"/tournaments/{tournamentId}");
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(winner);
+        Assert.Equal("Player 1", winner.Name);
+        Assert.NotNull(tournamentResponse);
+        Assert.Equal("Finished", tournamentResponse.Status);
+    }
+
+    [Fact]
+    public async Task CompleteTournament_UnplayedMatch_Returns400()
+    {
+        // Arrange
+        var tournamentId = await CreateActiveTournamentAsync(allMatchesPlayed: false);
+        
+        // Act
+        var response = await _client.PostAsync($"/tournaments/{tournamentId}/complete", null);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CompleteTournament_MissingId_Returns404()
+    {
+        
+        // Act
+        var response = await _client.PostAsync("/tournaments/99999/complete", null);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+   
     
     //lägger in en turnering med ett vissta antal deltagare direkt i testdatabasen
     private async Task<int> CreateTournamentWithParticipantsAsync(int participantCount)
@@ -209,6 +253,43 @@ public class TournamentEndpointsTests : IClassFixture<CustomWebApplicationFactor
         }
         
         await db.SaveChangesAsync();
+        return tournament.Id;
+    }
+
+    private async Task<int> CreateActiveTournamentAsync(bool allMatchesPlayed)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TourneyPlannerDbContext>();
+
+        var tournament = new Tournament
+        {
+            Name = "Paddel 2026",
+            StartDate = DateTime.Today,
+            TournamentStatus = Tournament.Status.Active,
+            Size = 2
+        };
+        db.Tournaments.Add(tournament);
+        await db.SaveChangesAsync();
+        
+        // skapar 2 deltagare koplade till turneringen
+        var p1 = new Participant { TournamentId = tournament.Id, Name = "Player 1" };
+        var p2 = new Participant { TournamentId = tournament.Id, Name = "Player 2" };
+        db.Participants.AddRange(p1, p2);
+        
+        await db.SaveChangesAsync();// spara så deltagarna får ID
+
+        var match = new Match
+        {
+            TournamentId = tournament.Id,
+            HomeParticipantId = p1.Id,
+            AwayParticipantId = p2.Id,
+            
+            HomeScore = allMatchesPlayed == true ? 3 : null,
+            AwayScore = allMatchesPlayed == true ? 1 : null
+        };
+        db.Matches.Add(match);
+        await db.SaveChangesAsync();
+
         return tournament.Id;
     }
 }

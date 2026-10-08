@@ -15,8 +15,11 @@ public static class TournamentEndpoints
         group.MapPost("/", CreateTournament);
 
         group.MapPost("/{id:int}/start", StartTournament);
+        group.MapPost("/{id:int}/complete", CompleteTournament);
+        
         group.MapGet("/", GetAllTournaments);
         group.MapGet("/{id:int}", GetTournamentById);
+        
         group.MapPut("/{id:int}", UpdateTournament);
         group.MapDelete("/{id:int}", DeleteTournament);
     }
@@ -102,6 +105,23 @@ public static class TournamentEndpoints
         catch (KeyNotFoundException ex)
         {
             return Results.NotFound(ex.Message);
+        }
+        catch (ValidationException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> CompleteTournament(int id, ITournamentService service)
+    {
+        try
+        {
+            var winner = await service.CompleteTournamentAsync(id);
+            return Results.Ok(winner);
+        }
+        catch (KeyNotFoundException e)
+        {
+            return Results.NotFound(e.Message);
         }
         catch (ValidationException ex)
         {
