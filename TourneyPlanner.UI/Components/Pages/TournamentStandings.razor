@@ -1,0 +1,85 @@
+﻿@page "/tournaments/{Id:int}/standings"
+@using TourneyPlanner.UI.Models
+@inject HttpClient HttpClient
+
+<PageTitle>Tabell</PageTitle>
+
+<a href="tournaments/@Id">Tillbaka till turneringen</a>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger mt-2">@errorMessage</div>
+}
+else if (standings == null || tournament == null)
+{
+    <p>Laddar tabell...</p>
+}
+else if (standings.Count == 0)
+{
+    <h1>Tabell - @tournament.Name</h1>
+    <p>Inga deltagare än</p>
+}
+else
+{
+    <h1>Tabell - @tournament.Name</h1>
+    
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Namn</th>
+                <th>S</th>
+                <th>V</th>
+                <th>O</th>
+                <th>F</th>
+                <th>Gjorda</th>
+                <th>Insläppta</th>
+                <th>+/-</th>
+                <th>P</th>
+            </tr>
+        </thead>
+        <tbody>
+        @for (var i = 0; i < standings.Count; ++i)
+        {
+            var row = standings[i];
+            <tr class="@(i == 0 ? "fw-bold" : "")">
+                <td>@(i + 1)</td>
+                <td>@row.Name</td>
+                <td>@row.Played</td>
+                <td>@row.Won</td>
+                <td>@row.Drawn</td>
+                <td>@row.Lost</td>
+                <td>@row.ScoreFor</td>
+                <td>@row.ScoreAgainst</td>
+                <td>@row.ScoreDifference</td>
+                <td>@row.Points</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private TournamentModel? tournament;
+    private List<StandingModel>? standings;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        errorMessage = null;
+
+        try
+        {
+            tournament = await HttpClient.GetFromJsonAsync<TournamentModel>($"tournaments/{Id}");
+            standings = await HttpClient.GetFromJsonAsync<List<StandingModel>>($"tournaments/{Id}/standings");
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Turneringen kunde inte hittas eller så svarar inte API:et";
+        }
+    }
+    
+}
