@@ -149,6 +149,24 @@ public class MatchServiceTests
         await Assert.ThrowsAsync<ValidationException>(() => _sut.GenerateScheduleAsync(TournamentId));
         Assert.Equal(6, _matchRepository.Matches.Count);
     }
+
+    [Fact]
+    public async Task GetAllSchedule_IncludesParticipantNames()
+    {
+        // Arrange
+        AddParticipant(2);
+        await _sut.GenerateScheduleAsync(TournamentId);
+
+        // Act
+        var matches = await _sut.GetAllScheduleAsync(TournamentId);
+
+        // Assert - kollar ifall matcherna inkluderar deltagarnamn
+        Assert.All(matches, m =>
+        {
+            Assert.False(string.IsNullOrEmpty(m.AwayParticipantName));
+            Assert.False(string.IsNullOrEmpty(m.HomeParticipantName));
+        });
+    }
 }
 
 

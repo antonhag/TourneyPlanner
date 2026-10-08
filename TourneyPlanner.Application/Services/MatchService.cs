@@ -75,9 +75,15 @@ public class MatchService : IMatchService
     public async Task<List<MatchDto>> GetAllScheduleAsync(int tournamentId)
     {
         await GetTournamentOrThrowsAsync(tournamentId);
+        
+        var participants = await _participantRepository.GetByTournamentIdAsync(tournamentId);
+        
+        // deltagarnas namn med ID som nyckel, krävs för att kunna visa namn i varje match
+        var names = participants.ToDictionary(p => p.Id, p => p.Name);
+        
         var matches = await _matchRepository.GetTournamentMatchesAsync(tournamentId);
         
-        return matches.Select(MapToDto).ToList();
+        return matches.Select(match => MapToDto(match, names)).ToList();
     }
 
     private async Task<Tournament> GetTournamentOrThrowsAsync(int tournamentId)
@@ -136,7 +142,7 @@ public class MatchService : IMatchService
         return matches;
     }
 
-    private static MatchDto MapToDto(Match match)
+    private static MatchDto MapToDto(Match match, Dictionary<int, string> names)
     {
         return new MatchDto
         {
@@ -145,6 +151,8 @@ public class MatchService : IMatchService
             Round = match.Round,
             HomeParticipantId = match.HomeParticipantId,
             AwayParticipantId = match.AwayParticipantId,
+            HomeParticipantName = names[match.HomeParticipantId],
+            AwayParticipantName = names[match.AwayParticipantId],
             HomeScore = match.HomeScore,
             AwayScore = match.AwayScore,
         };
