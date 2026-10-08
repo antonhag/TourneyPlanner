@@ -8,5 +8,6 @@ public interface IMatchRepository
     Task AddRangeAsync(List<Match> matches);
     Task RemoveRangeAsync(List<Match> matches);
     Task<List<Match>> GetTournamentMatchesAsync(int tournamentId);
-    
+    Task<Match?> GetByIdAsync(int id);
+    Task UpdateAsync(Match match);
 }
