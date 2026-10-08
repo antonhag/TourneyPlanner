@@ -115,6 +115,40 @@ public class MatchServiceTests
         var rounds = _matchRepository.Matches.Select(m => m.Round).Distinct().Count();
         Assert.Equal(expectedRounds, rounds);
     }
+
+    [Fact]
+    public async Task GenerateSchedule_TournamentNotFound_ShouldThrow()
+    {
+        // Arrange
+        AddParticipant(4);
+
+        // Act and Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.GenerateScheduleAsync(1337));
+    }
+
+    [Fact]
+    public async Task GenerateSchedule_TournamentNotDraft_DoesNotSave()
+    {
+        // Arrange
+        AddParticipant(4);
+        _tournamentRepository.Tournaments.First().TournamentStatus = Tournament.Status.Active;
+
+        // Act and Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.GenerateScheduleAsync(TournamentId));
+        Assert.Empty(_matchRepository.Matches);
+    }
+
+    [Fact]
+    public async Task GenerateSchedule_ScheduleAlreadyExists_DoesNotSave()
+    {
+        // Arrange
+        AddParticipant(4);
+        await _sut.GenerateScheduleAsync(TournamentId);
+
+        // Act and Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.GenerateScheduleAsync(TournamentId));
+        Assert.Equal(6, _matchRepository.Matches.Count);
+    }
 }
 
 

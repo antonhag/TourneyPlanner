@@ -21,7 +21,18 @@ public class MatchService : IMatchService
 
     public async Task GenerateScheduleAsync(int tournamentId)
     {
-        await GetTournamentOrThrowsAsync(tournamentId);
+        var tournament = await GetTournamentOrThrowsAsync(tournamentId);
+
+        if (tournament.TournamentStatus != Tournament.Status.Draft)
+        {
+            throw new ValidationException("Tournament must be in draft status");
+        }
+
+        if (await _matchRepository.ExistsForTournamentAsync(tournamentId))
+        {
+            throw new ValidationException("Schedule already exists");
+        }
+        
         var participants = await _participantRepository.GetByTournamentIdAsync(tournamentId);
         
         // Minst 2 spelare behövs för att starta 
@@ -29,10 +40,10 @@ public class MatchService : IMatchService
         {
             throw new ValidationException("At least two participants are required");
         }
-
+        
         var ids = participants.Select(p => p.Id).ToList();
         var matches = CreateRoundRobin(tournamentId, ids);
-
+        
         await _matchRepository.AddRangeAsync(matches);
     }
 
@@ -57,9 +68,8 @@ public class MatchService : IMatchService
         var ids = participants.Select(p => p.Id).ToList();
         var newMatches = CreateRoundRobin(tournamentId, ids);
         
-        await _matchRepository.AddRangeAsync(newMatches);
         await _matchRepository.RemoveRangeAsync(oldMatches);
-        
+        await _matchRepository.AddRangeAsync(newMatches);
     }
 
     public async Task<List<MatchDto>> GetAllScheduleAsync(int tournamentId)
@@ -75,7 +85,7 @@ public class MatchService : IMatchService
         var tournament = await _tournamentRepository.GetByIdAsync(tournamentId);
         if (tournament == null)
         {
-            throw new ValidationException("Tournament not found");
+            throw new KeyNotFoundException("Tournament not found");
         }
         return tournament;
     }
