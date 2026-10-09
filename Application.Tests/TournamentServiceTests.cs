@@ -17,7 +17,9 @@ public class TournamentServiceTests
     public TournamentServiceTests()
     {
         var matchService = new MatchService(_matchRepository, _participantRepository, _repository);
-        _sut = new TournamentService(_repository, _participantRepository, matchService);
+        var standingService = new StandingService(_repository, _participantRepository, _matchRepository);
+        
+        _sut = new TournamentService(_repository, _participantRepository, matchService, standingService);
     }
     
     [Fact]
@@ -306,6 +308,70 @@ public class TournamentServiceTests
         Assert.Equal(Tournament.Status.Draft, _repository.Tournaments.Single().TournamentStatus);
         Assert.Empty(_matchRepository.Matches);
     }
+
+    [Fact]
+    public async Task CompleteTournament_ValidTournament_ReturnsWinnerAndFinishes()
+    {
+        // Arrange
+        AddTournament(Tournament.Status.Active);
+        AddParticipants(2);
+        AddMatch(1, 2, 3, 1); //deltagar 1 vinner
+        
+        // Act
+        var winner = await _sut.CompleteTournamentAsync(1);
+
+        // Assert
+        var tournament = _repository.Tournaments.Single();
+        Assert.Equal(1, winner.ParticipantId);
+        Assert.Equal(Tournament.Status.Finished, tournament.TournamentStatus);
+        Assert.NotNull(tournament.EndDate);
+    }
+
+    [Theory]
+    [InlineData(Tournament.Status.Draft)]
+    [InlineData(Tournament.Status.Finished)]
+    public async Task CompleteTournament_WhenInactive_ThrowsAndStaysSameStatus(Tournament.Status status)
+    {
+        // Arrange
+        AddTournament(status);
+        AddParticipants(2);
+        AddMatch(1, 2, 3, 1); //deltagare 1 vinner
+        
+        // Act
+        // Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.CompleteTournamentAsync(1));
+        var tournament = _repository.Tournaments.Single();
+        Assert.Equal(status, tournament.TournamentStatus);
+        
+    }
+
+    [Fact]
+    public async Task CompleteTournament_UnplayedMatch_ThrowsExceptionAndDoesNotFinish()
+    {
+        // Arrange
+        AddTournament(Tournament.Status.Active);
+        AddParticipants(2);
+        AddMatch(1, 2, null, null);
+        
+        // Act
+        // Assert
+        await Assert.ThrowsAsync<ValidationException>(() => _sut.CompleteTournamentAsync(1));
+        
+        var tournament = _repository.Tournaments.Single();
+        Assert.Equal(Tournament.Status.Active, tournament.TournamentStatus);
+        Assert.Null(tournament.EndDate);
+    }
+
+    [Fact]
+    public async Task CompleteTournament_TournamentDoesntExist_ThrowsKeyNotFoundException()
+    {
+        // Arrange
+        const int nonExistingId = 999;
+        
+        // Act
+        // Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.CompleteTournamentAsync(nonExistingId));
+    }
     
     // hjälpmetoder
     private void AddTournament(Tournament.Status status = Tournament.Status.Draft)
@@ -316,7 +382,7 @@ public class TournamentServiceTests
             Name = "Paddel 2026",
             TournamentStatus = status,
             StartDate = DateTime.Today.AddDays(1),
-            EndDate = DateTime.Today.AddDays(2),
+            EndDate = null, //DateTime.Today.AddDays(2),
             Size = 4
         });
     }
@@ -332,5 +398,19 @@ public class TournamentServiceTests
                 Name = $"Player {i}"
             });
         }
+    }
+
+    private void AddMatch(int homeId, int awayId, int? homeScore, int? awayScore)
+    {
+        _matchRepository.Matches.Add(new Match
+        {
+            Id = _matchRepository.Matches.Count + 1,
+            TournamentId = 1,
+            Round = 1,
+            HomeParticipantId = homeId,
+            AwayParticipantId = awayId,
+            HomeScore = homeScore,
+            AwayScore = awayScore
+        });
     }
 }

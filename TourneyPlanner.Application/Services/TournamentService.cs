@@ -11,14 +11,17 @@ public class TournamentService : ITournamentService
     private readonly ITournamentRepository _tournamentRepository;
     private readonly IParticipantRepository _participantRepository;
     private readonly IMatchService _matchService;
+    private readonly IStandingService _standingService;
 
     public TournamentService(ITournamentRepository tournamentRepository,
         IParticipantRepository participantRepository,
-        IMatchService matchService)
+        IMatchService matchService,
+        IStandingService standingService)
     {
         _tournamentRepository = tournamentRepository;
         _participantRepository = participantRepository;
         _matchService = matchService;
+        _standingService = standingService;
     }
 
     public async Task CreateTournamentAsync(CreateTournamentDto dto)
@@ -99,6 +102,34 @@ public class TournamentService : ITournamentService
         
         tournament.TournamentStatus = Tournament.Status.Active;
         await _tournamentRepository.UpdateAsync(tournament);
+    }
+
+    public async Task<StandingDto> CompleteTournamentAsync(int id)
+    {
+        var tournament =  await GetExistingTournamentAsync(id);
+
+        if (tournament.TournamentStatus != Tournament.Status.Active)
+        {
+            throw new ValidationException("Only tournaments with active status can be ended");
+        }
+
+        var matches = await _matchService.GetAllScheduleAsync(id);
+
+        if (matches.Any(m => m.HomeScore == null || m.AwayScore == null))
+        {
+            throw new ValidationException("All matches must be played");
+        }
+
+        var standings = await _standingService.GetStandingsAsync(id);
+        var winner = standings.First();
+
+        tournament.TournamentStatus = Tournament.Status.Finished;
+        tournament.EndDate = DateTime.Today;
+        await _tournamentRepository.UpdateAsync(tournament);
+
+        return winner;
+
+
     }
 
 

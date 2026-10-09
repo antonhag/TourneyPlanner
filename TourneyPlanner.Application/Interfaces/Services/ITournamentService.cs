@@ -12,4 +12,5 @@ public interface ITournamentService
     Task DeleteTournamentAsync(int id);
 
     Task StartTournamentAsync(int id);
+    Task<StandingDto> CompleteTournamentAsync(int id);
 }
