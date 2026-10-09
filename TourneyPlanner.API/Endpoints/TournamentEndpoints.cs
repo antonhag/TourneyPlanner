@@ -15,7 +15,7 @@ public static class TournamentEndpoints
         group.MapPost("/", CreateTournament).RequireAuthorization();
 
        
-        group.MapPost("/{id:int}/complete", CompleteTournament);
+        group.MapPost("/{id:int}/complete", CompleteTournament).RequireAuthorization();
         
         group.MapPost("/{id:int}/start", StartTournament).RequireAuthorization();
         group.MapGet("/", GetAllTournaments);
