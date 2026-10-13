@@ -58,7 +58,7 @@
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-                AuthState.Login(model.Email, result!.AccessToken);
+                await AuthState.LoginAsync(model.Email, result!.AccessToken);
                 Navigation.NavigateTo("tournaments");
             }
             else

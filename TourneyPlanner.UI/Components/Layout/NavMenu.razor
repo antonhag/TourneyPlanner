@@ -4,7 +4,7 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">TourneyPlanner.UI</a>
+        <a class="navbar-brand" href="">TourneyPlanner</a>
     </div>
 </div>
 
@@ -12,11 +12,6 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
         @if (AuthState.IsLoggedIn)
         {
             <div class="nav-item px-3">
@@ -57,9 +52,9 @@
         _ = InvokeAsync(StateHasChanged);  // " _ = " vi väntar inte på resultatet metvetet
     }
 
-    private void Logout()
+    private async Task Logout()
     {
-        AuthState.Logout();
+        await AuthState.LogoutAsync();
         Navigation.NavigateTo("");
     }
 
