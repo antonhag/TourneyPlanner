@@ -70,13 +70,17 @@ else
                     {
                         @if (t.Status == "Draft")
                         {
-                            <a class="btn btn-sm btn-success" href="tournaments/@t.Id/edit">Redigera</a>
-                            <button class="btn btn-sm btn-success" @onclick="(() => Start(t))" disabled="@isStarting">Starta</button>
-                            <button class="btn btn-sm btn-danger" @onclick="(() => Delete(t))">Ta bort</button>
+                            <a class="btn btn-sm btn-secondary" href="tournaments/@t.Id/edit">Redigera</a>
+                            <button class="btn btn-sm btn-success me-1" @onclick="(() => Start(t))" disabled="@isStarting">Starta</button>
                         }
                         else if (t.Status == "Active")
                         {
                             <button class="btn btn-sm btn-warning" @onclick="() => Complete(t)">Avsluta</button>
+                        }
+
+                        if (t.Status != "Active")
+                        {
+                            <button class="btn btn-sm btn-danger" @onclick="() => Delete(t)">Ta bort</button>
                         }
                     }
                 </td>
