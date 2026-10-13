@@ -10,13 +10,13 @@ public static class MatchEndpoints
     {
         // Schemat hör till en turnering men ligger här så att TorunamentEndpoints lämnas orörd
         var tournamentGroup = app.MapGroup("/tournaments");
-        tournamentGroup.MapPost("/{id:int}/schedule", GenerateSchedule).RequireAuthorization();
+        tournamentGroup.MapPost("/{id:int}/schedule", GenerateSchedule).RequireAuthorization("Organizer");
         tournamentGroup.MapGet("/{id:int}/schedule", GetSchedule);
-        tournamentGroup.MapPut("/{id:int}/schedule", UpdateSchedule).RequireAuthorization();
+        tournamentGroup.MapPut("/{id:int}/schedule", UpdateSchedule).RequireAuthorization("Organizer");
         
         // resultat registeras på en enskild match
         var matchGroup = app.MapGroup("/matches");
-        matchGroup.MapPut("/{id:int}/result", RegisterResult).RequireAuthorization();
+        matchGroup.MapPut("/{id:int}/result", RegisterResult).RequireAuthorization("Organizer");
     }
 
     private static async Task<IResult> GenerateSchedule(int id, IMatchService service)

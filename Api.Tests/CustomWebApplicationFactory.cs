@@ -14,6 +14,10 @@ public class CustomWebApplicationFactory<T> : WebApplicationFactory<T> where T :
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // stänger av seedningen av arrangörskontot i testerna,
+        // eftersom tabellerna inte finns när API:et startar
+        builder.UseSetting("Organizer:Email", "");
+        
         builder.ConfigureServices(services =>
         {
             var descriptor = services.SingleOrDefault(d => d.ServiceType ==

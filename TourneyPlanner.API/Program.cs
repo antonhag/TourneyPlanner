@@ -26,11 +26,41 @@ builder.Services.AddScoped<IMatchService, MatchService>();
 
 builder.Services.AddScoped<IStandingService, StandingService>();
 
-// Identity
-builder.Services.AddAuthorization();
-builder.Services.AddIdentityApiEndpoints<IdentityUser>().AddEntityFrameworkStores<TourneyPlannerDbContext>();
+// Identity, endast användare med Organizer rollen får ändra data
+builder.Services.AddAuthorization(options =>
+    options.AddPolicy("Organizer", policy => policy.RequireRole("Organizer")));
+builder.Services.AddIdentityApiEndpoints<IdentityUser>().AddRoles<IdentityRole>().AddEntityFrameworkStores<TourneyPlannerDbContext>();
 
 var app = builder.Build();
+
+var organizerEmail = builder.Configuration["Organizer:Email"];
+var organizerPassword = builder.Configuration["Organizer:Password"];
+
+// seedar rollen och arrangörskontot vid varje start, men skapar bara det som saknas,
+// uppgifterna kommer från user secrets, saknas de så hoppas seedningen över.
+if (!string.IsNullOrEmpty(organizerEmail) && !string.IsNullOrEmpty(organizerPassword))
+{
+    using var scope = app.Services.CreateScope();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    if (!await roleManager.RoleExistsAsync("Organizer"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Organizer"));
+    }
+    
+    var organizer = await userManager.FindByEmailAsync(organizerEmail);
+    if (organizer == null)
+    {
+        organizer = new IdentityUser { UserName = organizerEmail, Email = organizerEmail };
+        await userManager.CreateAsync(organizer, organizerPassword);
+    }
+
+    if (!await userManager.IsInRoleAsync(organizer, "Organizer"))
+    {
+        await userManager.AddToRoleAsync(organizer, "Organizer");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
