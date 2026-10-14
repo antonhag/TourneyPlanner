@@ -169,7 +169,8 @@ public class TournamentService : ITournamentService
             Status = tournament.TournamentStatus.ToString(),
             StartDate = tournament.StartDate,
             CreatedAt = tournament.CreatedAt,
-            Size = tournament.Size
+            Size = tournament.Size,
+            EndDate = tournament.EndDate
         };
     }
 }
