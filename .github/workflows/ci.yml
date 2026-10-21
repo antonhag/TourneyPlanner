@@ -62,7 +62,22 @@ jobs:
           curl -sf -H "Content-Type: application/json" \
             -d "{\"content\": \"$STATUS - $ANTAL_RADER_KOD rader av C#-kod\"}" "$WEBHOOK"
 
-       
+
+  pr_notifier:
+    name: Notifiera ny PR
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skicka PR notifikation till Discord
+        env:
+         WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+         SKAPAD_AV: ${{ github.event.pull_request.user.login }}
+         PR_NUMMER: ${{ github.event.pull_request.number }}
+         PR_LINK: ${{ github.event.pull_request.html_url }}
+        run: |
+           curl -sf -H "Content-Type: application/json" \
+             -d "{\"content\": \"$SKAPAD_AV har skapat PR #$PR_NUMMER: $PR_LINK\"}"
+    
      
     
         
