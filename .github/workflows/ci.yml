@@ -57,7 +57,7 @@ jobs:
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           ANTAL_RADER_KOD: ${{ needs.build.outputs.antal_rader }}
-          STATUS: ${{ needs.build.result == 'success' && 'Körningen lyckades' || 'Körningen misslyckades' }}
+          STATUS: ${{ needs.build.result == 'success' && 'Körningen lyckades' || 'Körningen misslyckades, se PR för mer information' }}
         run: |
           curl -sf -H "Content-Type: application/json" \
             -d "{\"content\": \"$STATUS - $ANTAL_RADER_KOD rader av C#-kod\"}" "$WEBHOOK"
