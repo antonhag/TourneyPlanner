@@ -13,7 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
         BUILD_CONFIGURATION: "Release"
+    outputs:
+      antal_rader: ${{ steps.rakna_rader.outputs.antal_rader }}
     steps:
+      - uses: actions/checkout@v7
+      - name: Räkna antal rader C#-kod
+        id: rakna_rader
+        run: echo "antal_rader=$(find . -name '*.cs' -not -path '*/obj/*' -not -path '*/bin/*' | xargs cat | wc -l)" >> $GITHUB_OUTPUT
       - name: build-and-test
         run: echo "Bygg och testa"
       - uses: actions/checkout@v7
@@ -40,7 +46,21 @@ jobs:
             echo "Startad av $STARTED_BY — händelse: $ACTION — gren: $BRANCH"
             echo "Startad av $STARTED_BY — händelse: $ACTION — gren: $BRANCH" > $GITHUB_STEP_SUMMARY
             
-        
+  discord_notifier:
+    name: Discord notiser
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Skicka CI status till Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          ANTAL_RADER_KOD: ${{ needs.build.outputs.antal_rader }}
+          STATUS: ${{ needs.build.result == 'success' && 'Körningen lyckades' || 'Körningen misslyckades' }}
+        run: |
+          curl -sf -H "Content-Type: application/json" \
+            -d "{\"content\": \"$STATUS - $ANTAL_RADER_KOD rader av C#-kod\"}" "$WEBHOOK"
 
        
      
